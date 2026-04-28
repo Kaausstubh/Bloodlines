@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | SmartBlood</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="page-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🛡️</div>
+      <span>SmartBlood</span>
+    </div>
+    <div class="sidebar-section-label">Admin Console</div>
+    <ul class="sidebar-nav">
+      <li><a href="#" class="active" onclick="showSection('overview')"><span class="nav-icon">📊</span>Analytics</a></li>
+      <li><a href="#" onclick="showSection('hospitals')"><span class="nav-icon">🏥</span>Hospitals</a></li>
+      <li><a href="#" onclick="showSection('donors')"><span class="nav-icon">🩸</span>All Donors</a></li>
+      <li><a href="#" onclick="showSection('requests')"><span class="nav-icon">📋</span>All Requests</a></li>
+      <li><a href="#" onclick="showSection('inspections')"><span class="nav-icon">🔍</span>Inspections</a></li>
+      <li><a href="../map.html"><span class="nav-icon">🗺️</span>Live Map</a></li>
+    </ul>
+    <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; border-top: 1px solid var(--glass-border);">
+      <div style="font-size: 0.75rem; color: var(--gray-500); margin-bottom: 8px; text-align: center;">Government Admin</div>
+      <button class="btn btn-ghost btn-sm" style="width: 100%;" onclick="logout()">🚪 Sign Out</button>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <div class="dashboard-header">
+      <div>
+        <div class="page-title" id="page-title">System Analytics</div>
+        <div class="text-muted">Government Admin Panel · SmartBlood Network</div>
+      </div>
+      <div class="user-menu">
+        <div class="user-avatar" style="background: linear-gradient(135deg, #1d4ed8, #3b82f6);">G</div>
+      </div>
+    </div>
+
+    <div class="dashboard-content">
+      <!-- ANALYTICS -->
+      <div id="section-overview">
+        <div class="grid-4" style="margin-bottom: 28px;" id="stats-grid">
+          <div class="stat-card"><div class="stat-icon">🩸</div><div class="stat-value" id="s-donors">—</div><div class="stat-label">Total Donors</div><div class="stat-change up" id="s-verified-donors"></div></div>
+          <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-value" id="s-requests">—</div><div class="stat-label">Total Requests</div><div class="stat-change up" id="s-fulfillment"></div></div>
+          <div class="stat-card"><div class="stat-icon">🏥</div><div class="stat-value" id="s-hospitals">—</div><div class="stat-label">Total Hospitals</div><div class="stat-change up" id="s-approved-hospitals"></div></div>
+          <div class="stat-card"><div class="stat-icon">💉</div><div class="stat-value" id="s-donations">—</div><div class="stat-label">Total Donations</div></div>
+        </div>
+
+        <!-- Summary Cards Row -->
+        <div class="grid-4" style="margin-bottom: 28px;">
+          <div class="card" style="text-align: center; padding: 16px;">
+            <div style="font-size: 1.8rem; font-weight: 800; color: #ef4444;" id="s-emergency">—</div>
+            <div class="text-muted">Emergency Requests</div>
+          </div>
+          <div class="card" style="text-align: center; padding: 16px;">
+            <div style="font-size: 1.8rem; font-weight: 800; color: #4ade80;" id="s-fulfilled">—</div>
+            <div class="text-muted">Fulfilled</div>
+          </div>
+          <div class="card" style="text-align: center; padding: 16px;">
+            <div style="font-size: 1.8rem; font-weight: 800; color: #fbbf24;" id="s-rate">—</div>
+            <div class="text-muted">Fulfillment Rate</div>
+          </div>
+          <div class="card" style="text-align: center; padding: 16px;">
+            <div style="font-size: 1.8rem; font-weight: 800; color: #60a5fa;" id="s-patients">—</div>
+            <div class="text-muted">Registered Patients</div>
+          </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="card" style="padding: 28px;">
+          <h3 style="margin-bottom: 24px;">📈 Monthly Donation Trend (Last 6 Months)</h3>
+          <canvas id="donationChart" height="80"></canvas>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="grid-2" style="margin-top: 28px;">
+          <div class="card">
+            <h3 style="margin-bottom: 16px;">🏥 Pending Hospital Approvals</h3>
+            <div id="pending-hospitals-quick"></div>
+          </div>
+          <div class="card">
+            <h3 style="margin-bottom: 16px;">🚨 Recent Emergency Requests</h3>
+            <div id="emergencies-preview"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOSPITALS -->
+      <div id="section-hospitals" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+          <h2>🏥 Hospital Management</h2>
+          <div style="display:flex;gap:8px;">
+            <select class="form-select" id="hosp-filter" onchange="loadHospitals()" style="width:auto;padding:8px 12px;">
+              <option value="">All</option>
+              <option value="approved">Approved</option>
+              <option value="pending">Pending</option>
+              <option value="blocked">Blocked</option>
+            </select>
+          </div>
+        </div>
+        <div id="hospitals-table"></div>
+      </div>
+
+      <!-- DONORS -->
+      <div id="section-donors" style="display:none;">
+        <h2 style="margin-bottom: 24px;">🩸 All Registered Donors</h2>
+        <div id="donors-table"></div>
+      </div>
+
+      <!-- REQUESTS -->
+      <div id="section-requests" style="display:none;">
+        <h2 style="margin-bottom: 24px;">📋 All Blood Requests</h2>
+        <div id="requests-table"></div>
+      </div>
+
+      <!-- INSPECTIONS -->
+      <div id="section-inspections" style="display:none;">
+        <h2 style="margin-bottom: 24px;">🔍 Schedule Inspection</h2>
+        <div class="card" style="max-width: 540px;">
+          <div class="form-group">
+            <label class="form-label">Select Hospital *</label>
+            <select class="form-select" id="insp-hospital"><option value="">Loading hospitals...</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Scheduled Date *</label>
+            <input class="form-input" type="date" id="insp-date">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Message to Hospital</label>
+            <textarea class="form-textarea" id="insp-message" placeholder="Inspection details, requirements, etc."></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="scheduleInspection()">📤 Send Inspection Reminder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Block Hospital Modal -->
+<div class="modal-overlay" id="block-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Block Hospital</div>
+      <button class="modal-close" onclick="closeBlockModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Reason for Blocking</label>
+      <textarea class="form-textarea" id="block-reason" placeholder="Provide reason for blocking this hospital..."></textarea>
+    </div>
+    <div style="display:flex;gap:12px;">
+      <button class="btn btn-ghost" onclick="closeBlockModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmBlock()">Block Hospital</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  let currentHospitalId = null;
+
+  async function init() {
+    const user = requireAuth(['admin']);
+    if (!user) return;
+    await loadAnalytics();
+  }
+
+  async function loadAnalytics() {
+    const res = await api.get('/admin/analytics');
+    if (!res.success) return;
+    const s = res.stats;
+    document.getElementById('s-donors').textContent = s.totalDonors;
+    document.getElementById('s-requests').textContent = s.totalRequests;
+    document.getElementById('s-hospitals').textContent = s.totalHospitals;
+    document.getElementById('s-donations').textContent = s.totalDonations;
+    document.getElementById('s-fulfilled').textContent = s.fulfilledRequests;
+    document.getElementById('s-emergency').textContent = s.emergencyRequests;
+    document.getElementById('s-rate').textContent = s.fulfillmentRate + '%';
+    document.getElementById('s-patients').textContent = s.totalPatients;
+    document.getElementById('s-verified-donors').textContent = `✅ ${s.verifiedDonors} verified`;
+    document.getElementById('s-fulfillment').textContent = `✅ ${s.fulfillmentRate}% fulfilled`;
+    document.getElementById('s-approved-hospitals').textContent = `✅ ${s.approvedHospitals} approved`;
+
+    // Chart
+    const months = res.monthlyDonations.map(d => `${d._id.month}/${d._id.year}`);
+    const counts = res.monthlyDonations.map(d => d.count);
+    const ctx = document.getElementById('donationChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: months.length ? months : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+          label: 'Donations',
+          data: counts.length ? counts : [12, 19, 8, 24, 15, 28],
+          backgroundColor: 'rgba(220,38,38,0.6)',
+          borderColor: 'rgba(220,38,38,1)',
+          borderWidth: 2, borderRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#9ca3af' } } },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } },
+          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } }
+        }
+      }
+    });
+
+    // Load previews
+    await loadHospitalPreviews();
+    await loadEmergenciesPreview();
+  }
+
+  async function loadHospitalPreviews() {
+    const res = await api.get('/admin/hospitals');
+    const pending = res.hospitals?.filter(h => !h.isApprovedByAdmin && !h.isBlocked) || [];
+    const container = document.getElementById('pending-hospitals-quick');
+    if (!pending.length) { container.innerHTML = '<p class="text-muted">No pending approvals.</p>'; return; }
+    container.innerHTML = pending.slice(0, 4).map(h => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--dark-500);">
+        <div><div style="font-weight:600;font-size:0.9rem;">${h.hospitalName || h.name}</div><div class="text-muted">${h.licenseNumber || 'No license'}</div></div>
+        <button class="btn btn-success btn-sm" onclick="approveHospital('${h._id}')">✅ Approve</button>
+      </div>
+    `).join('');
+    // Also populate inspection dropdown
+    const sel = document.getElementById('insp-hospital');
+    const approved = res.hospitals?.filter(h => h.isApprovedByAdmin) || [];
+    sel.innerHTML = '<option value="">Select hospital</option>' + approved.map(h => `<option value="${h._id}">${h.hospitalName || h.name}</option>`).join('');
+  }
+
+  async function loadEmergenciesPreview() {
+    const res = await api.get('/requests?urgency=emergency&status=open');
+    const container = document.getElementById('emergencies-preview');
+    if (!res.requests?.length) { container.innerHTML = '<p class="text-muted">No active emergencies.</p>'; return; }
+    container.innerHTML = res.requests.slice(0, 4).map(r => `
+      <div class="emergency-banner" style="margin-bottom: 8px; padding: 12px 16px;">
+        <div>
+          <div style="font-weight:600;font-size:0.9rem;">${r.patientName} — ${r.bloodGroup}</div>
+          <div class="text-muted">${r.location?.address || '—'} · ${timeAgo(r.createdAt)}</div>
+        </div>
+        <span class="badge badge-red">EMERGENCY</span>
+      </div>
+    `).join('');
+  }
+
+  async function loadHospitals() {
+    const filter = document.getElementById('hosp-filter').value;
+    const res = await api.get('/admin/hospitals');
+    let hospitals = res.hospitals || [];
+    if (filter === 'approved') hospitals = hospitals.filter(h => h.isApprovedByAdmin && !h.isBlocked);
+    if (filter === 'pending') hospitals = hospitals.filter(h => !h.isApprovedByAdmin && !h.isBlocked);
+    if (filter === 'blocked') hospitals = hospitals.filter(h => h.isBlocked);
+    const c = document.getElementById('hospitals-table');
+    c.innerHTML = `
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Hospital</th><th>License</th><th>Location</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody>${hospitals.map(h => `
+            <tr>
+              <td><div style="font-weight:600">${h.hospitalName || h.name}</div><div class="text-muted">${h.email || ''}</div></td>
+              <td class="text-muted">${h.licenseNumber || '—'}</td>
+              <td class="text-muted">${h.location?.address || '—'}</td>
+              <td><span class="badge ${h.isBlocked ? 'badge-red' : h.isApprovedByAdmin ? 'badge-green' : 'badge-yellow'}">${h.isBlocked ? 'Blocked' : h.isApprovedByAdmin ? 'Approved' : 'Pending'}</span></td>
+              <td class="text-muted">${formatDate(h.createdAt)}</td>
+              <td>
+                <div style="display:flex;gap:6px;">
+                  ${!h.isApprovedByAdmin && !h.isBlocked ? `<button class="btn btn-success btn-sm" onclick="approveHospital('${h._id}')">✅ Approve</button>` : ''}
+                  ${!h.isBlocked ? `<button class="btn btn-danger btn-sm" onclick="openBlockModal('${h._id}')">⛔ Block</button>` : `<button class="btn btn-outline btn-sm" onclick="toggleBlockUser('${h._id}')">Unblock</button>`}
+                </div>
+              </td>
+            </tr>
+          `).join('')}</tbody>
+        </table>
+      </div>`;
+  }
+
+  async function loadDonors() {
+    const res = await api.get('/donors/all');
+    const c = document.getElementById('donors-table');
+    c.innerHTML = `
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Donor</th><th>Blood Group</th><th>Age</th><th>Status</th><th>Donations</th><th>Rating</th><th>Actions</th></tr></thead>
+          <tbody>${(res.donors || []).map(d => `
+            <tr>
+              <td><div style="font-weight:600">${d.name}</div><div class="text-muted">${d.email}</div></td>
+              <td>${bloodBadge(d.bloodGroup)}</td>
+              <td>${d.age || '—'}</td>
+              <td><span class="badge ${d.isBlocked ? 'badge-red' : d.isVerified ? 'badge-green' : 'badge-yellow'}">${d.isBlocked ? 'Blocked' : d.isVerified ? 'Verified' : 'Unverified'}</span></td>
+              <td>${d.donationCount || 0}</td>
+              <td>⭐ ${d.rating?.toFixed(1) || 'N/A'}</td>
+              <td><button class="btn ${d.isBlocked ? 'btn-outline' : 'btn-danger'} btn-sm" onclick="toggleBlockUser('${d._id}')">${d.isBlocked ? 'Unblock' : 'Block'}</button></td>
+            </tr>
+          `).join('')}</tbody>
+        </table>
+      </div>`;
+  }
+
+  async function loadRequests() {
+    const res = await api.get('/requests');
+    const c = document.getElementById('requests-table');
+    c.innerHTML = `
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Patient</th><th>Blood Group</th><th>Urgency</th><th>Status</th><th>Location</th><th>Created</th></tr></thead>
+          <tbody>${(res.requests || []).map(r => `
+            <tr>
+              <td style="font-weight:600">${r.patientName}</td>
+              <td>${bloodBadge(r.bloodGroup)}</td>
+              <td>${urgencyBadge(r.urgency)}</td>
+              <td>${statusBadge(r.status)}</td>
+              <td class="text-muted">${r.location?.address || '—'}</td>
+              <td class="text-muted">${formatDate(r.createdAt)}</td>
+            </tr>
+          `).join('')}</tbody>
+        </table>
+      </div>`;
+  }
+
+  async function approveHospital(id) {
+    const res = await api.put(`/admin/hospitals/${id}/approve`);
+    if (res.success) { showToast(`Hospital approved!`, 'success'); loadHospitalPreviews(); if(document.getElementById('section-hospitals').style.display !== 'none') loadHospitals(); }
+    else showToast(res.message, 'error');
+  }
+
+  function openBlockModal(id) { currentHospitalId = id; document.getElementById('block-reason').value = ''; document.getElementById('block-modal').classList.add('show'); }
+  function closeBlockModal() { document.getElementById('block-modal').classList.remove('show'); }
+  async function confirmBlock() {
+    const res = await api.put(`/admin/hospitals/${currentHospitalId}/block`, { reason: document.getElementById('block-reason').value });
+    if (res.success) { showToast('Hospital blocked.', 'info'); closeBlockModal(); loadHospitals(); }
+    else showToast(res.message, 'error');
+  }
+
+  async function toggleBlockUser(id) {
+    const res = await api.put(`/admin/users/${id}/toggle-block`);
+    if (res.success) { showToast(`User ${res.message}`, 'info'); loadDonors(); }
+    else showToast(res.message, 'error');
+  }
+
+  async function scheduleInspection() {
+    const hospId = document.getElementById('insp-hospital').value;
+    const date = document.getElementById('insp-date').value;
+    if (!hospId || !date) { showToast('Please select hospital and date', 'warning'); return; }
+    const res = await api.post('/admin/inspections', { hospitalId: hospId, scheduledDate: date, message: document.getElementById('insp-message').value });
+    if (res.success) { showToast('Inspection reminder sent!', 'success'); document.getElementById('insp-date').value = ''; document.getElementById('insp-message').value = ''; }
+    else showToast(res.message, 'error');
+  }
+
+  function showSection(name) {
+    ['overview','hospitals','donors','requests','inspections'].forEach(s => { const el = document.getElementById('section-'+s); if(el) el.style.display = s===name?'block':'none'; });
+    const titles = {overview:'System Analytics',hospitals:'Hospital Management',donors:'All Donors',requests:'All Requests',inspections:'Schedule Inspections'};
+    document.getElementById('page-title').textContent = titles[name] || '';
+    if (name === 'hospitals') loadHospitals();
+    if (name === 'donors') loadDonors();
+    if (name === 'requests') loadRequests();
+  }
+
+  function logout() { clearAuth(); window.location.href = '/login.html'; }
+  init();
+</script>
+</body>
+</html>

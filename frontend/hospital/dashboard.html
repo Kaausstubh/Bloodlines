@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hospital Dashboard | SmartBlood</title>
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+<div class="page-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🏥</div>
+      <span>SmartBlood</span>
+    </div>
+    <div class="sidebar-section-label">Hospital Portal</div>
+    <ul class="sidebar-nav">
+      <li><a href="#" class="active" onclick="showSection('overview')"><span class="nav-icon">📊</span>Overview</a></li>
+      <li><a href="#" onclick="showSection('pending')"><span class="nav-icon">⏳</span>Pending Verification</a></li>
+      <li><a href="#" onclick="showSection('verified')"><span class="nav-icon">✅</span>Verified Donors</a></li>
+      <li><a href="#" onclick="showSection('donations')"><span class="nav-icon">💉</span>Recent Donations</a></li>
+      <li><a href="../map.html"><span class="nav-icon">🗺️</span>Live Map</a></li>
+    </ul>
+    <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; border-top: 1px solid var(--glass-border);">
+      <button class="btn btn-ghost btn-sm" style="width: 100%;" onclick="logout()">🚪 Sign Out</button>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <div class="dashboard-header">
+      <div>
+        <div class="page-title" id="page-title">Hospital Dashboard</div>
+        <div class="text-muted" id="hosp-name"></div>
+      </div>
+      <div class="user-menu">
+        <div style="position: relative;">
+          <button class="btn btn-ghost btn-icon" onclick="toggleNotifs()" id="notif-btn">🔔</button>
+          <span id="notif-badge" style="position:absolute;top:-4px;right:-4px;background:var(--primary);color:white;font-size:0.65rem;width:18px;height:18px;border-radius:50%;display:none;align-items:center;justify-content:center;font-weight:700;"></span>
+        </div>
+        <div id="approval-badge" class="badge" style="margin: 0 8px;"></div>
+        <div class="user-avatar" id="user-avatar">H</div>
+      </div>
+    </div>
+
+    <div class="notif-panel" id="notif-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><strong style="font-size:0.9rem;">Notifications</strong></div>
+      <div id="notif-list"><div class="loading-full" style="height:80px"><span class="spinner"></span></div></div>
+    </div>
+
+    <div class="dashboard-content">
+      <!-- Not approved banner -->
+      <div id="not-approved-banner" class="alert alert-warning" style="display: none; margin-bottom: 24px;">
+        ⚠️ <strong>Your hospital is awaiting government admin approval.</strong> Once approved, you can verify donors.
+      </div>
+
+      <!-- OVERVIEW -->
+      <div id="section-overview">
+        <div class="grid-4" style="margin-bottom: 28px;">
+          <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-value" id="stat-pending">—</div>
+            <div class="stat-label">Pending Verifications</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value" id="stat-verified">—</div>
+            <div class="stat-label">Verified by Us</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">💉</div>
+            <div class="stat-value" id="stat-donations">—</div>
+            <div class="stat-label">Recent Donations</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🏥</div>
+            <div class="stat-value" id="stat-approval">—</div>
+            <div class="stat-label">Approval Status</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <h3 style="margin-bottom: 16px;">⏳ Pending Donor Verifications</h3>
+            <div id="pending-list-preview">
+              <div class="loading-full"><span class="spinner"></span></div>
+            </div>
+          </div>
+          <div>
+            <h3 style="margin-bottom: 16px;">💉 Recent Donations Processed</h3>
+            <div id="donations-preview">
+              <div class="loading-full"><span class="spinner"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PENDING VERIFICATION -->
+      <div id="section-pending" style="display:none;">
+        <h2 style="margin-bottom: 24px;">⏳ Donor Verification Queue</h2>
+        <div id="pending-full-list"></div>
+      </div>
+
+      <!-- VERIFIED DONORS -->
+      <div id="section-verified" style="display:none;">
+        <h2 style="margin-bottom: 24px;">✅ Donors Verified by Our Hospital</h2>
+        <div id="verified-list"></div>
+      </div>
+
+      <!-- DONATIONS -->
+      <div id="section-donations" style="display:none;">
+        <h2 style="margin-bottom: 24px;">💉 Recent Donations</h2>
+        <div id="donations-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Verify Donor Modal -->
+<div class="modal-overlay" id="verify-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-donor-name">Verify Donor</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Decision</label>
+      <select class="form-select" id="modal-action">
+        <option value="approve">✅ Approve — Mark as Verified</option>
+        <option value="reject">❌ Reject — Mark as Ineligible</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Health Status</label>
+      <select class="form-select" id="modal-health">
+        <option value="healthy">Healthy</option>
+        <option value="under-medication">Under Medication</option>
+        <option value="ineligible">Ineligible</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes (Optional)</label>
+      <textarea class="form-textarea" id="modal-notes" placeholder="Reason for rejection or verification notes..."></textarea>
+    </div>
+    <div style="display: flex; gap: 12px;">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitVerification()" id="verify-submit-btn">Submit</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  let currentUser = null;
+  let currentDonorId = null;
+  let dashData = null;
+
+  async function init() {
+    currentUser = requireAuth(['hospital']);
+    if (!currentUser) return;
+    document.getElementById('user-avatar').textContent = currentUser.name.charAt(0);
+    document.getElementById('hosp-name').textContent = currentUser.hospitalName || currentUser.name;
+    const badge = document.getElementById('approval-badge');
+    if (currentUser.isApprovedByAdmin) {
+      badge.className = 'badge badge-green'; badge.textContent = '✅ Approved';
+    } else {
+      badge.className = 'badge badge-yellow'; badge.textContent = '⏳ Pending Approval';
+      document.getElementById('not-approved-banner').style.display = 'flex';
+    }
+    document.getElementById('stat-approval').textContent = currentUser.isApprovedByAdmin ? 'Approved' : 'Pending';
+    await loadDashboard();
+    await loadNotifications();
+  }
+
+  async function loadDashboard() {
+    const res = await api.get('/hospitals/dashboard');
+    if (!res.success) return;
+    dashData = res;
+    document.getElementById('stat-pending').textContent = res.stats.pendingVerifications;
+    document.getElementById('stat-verified').textContent = res.stats.verifiedByMe;
+    document.getElementById('stat-donations').textContent = res.stats.recentDonations;
+    renderPendingList(res.pendingDonors, 'pending-list-preview', true);
+    renderDonationsPreview(res.recentDonations);
+    renderPendingList(res.pendingDonors, 'pending-full-list', false);
+    renderVerifiedList(res.verifiedDonors);
+  }
+
+  function renderPendingList(donors, containerId, preview) {
+    const c = document.getElementById(containerId);
+    const list = preview ? donors.slice(0, 3) : donors;
+    if (!list.length) { c.innerHTML = '<p class="text-muted">No pending verifications.</p>'; return; }
+    c.innerHTML = list.map(d => `
+      <div class="donor-card" style="margin-bottom: 12px; display: flex; align-items: center; gap: 16px;">
+        <div class="donor-avatar">${d.name.charAt(0)}</div>
+        <div class="donor-info">
+          <div class="donor-name">${d.name}</div>
+          <div class="donor-meta">
+            ${bloodBadge(d.bloodGroup)}
+            <span>Age: ${d.age || 'N/A'}</span>
+            <span>Weight: ${d.weight || 'N/A'}kg</span>
+            <span>${formatDate(d.createdAt)}</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-shrink: 0;">
+          <button class="btn btn-success btn-sm" onclick="openVerifyModal('${d._id}', '${d.name}', 'approve')">✅ Verify</button>
+          <button class="btn btn-danger btn-sm" onclick="openVerifyModal('${d._id}', '${d.name}', 'reject')">✗ Reject</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderVerifiedList(donors) {
+    const c = document.getElementById('verified-list');
+    if (!donors.length) { c.innerHTML = '<p class="text-muted">No donors verified by this hospital yet.</p>'; return; }
+    c.innerHTML = `
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Donor</th><th>Blood Group</th><th>Age</th><th>Health Status</th><th>Verified On</th><th>Actions</th></tr></thead>
+          <tbody>${donors.map(d => `
+            <tr>
+              <td><div style="font-weight:600">${d.name}</div><div class="text-muted">${d.email}</div></td>
+              <td>${bloodBadge(d.bloodGroup)}</td>
+              <td>${d.age || '—'}</td>
+              <td><span class="badge ${d.healthStatus === 'healthy' ? 'badge-green' : d.healthStatus === 'under-medication' ? 'badge-yellow' : 'badge-red'}">${d.healthStatus}</span></td>
+              <td class="text-muted">${d.verifiedAt ? formatDate(d.verifiedAt) : '—'}</td>
+              <td><button class="btn btn-danger btn-sm" onclick="revokeVerification('${d._id}')">Revoke</button></td>
+            </tr>
+          `).join('')}</tbody>
+        </table>
+      </div>`;
+  }
+
+  function renderDonationsPreview(donations) {
+    const c = document.getElementById('donations-preview');
+    if (!donations.length) { c.innerHTML = '<p class="text-muted">No donations recorded yet.</p>'; return; }
+    c.innerHTML = donations.map(d => `
+      <div class="card" style="margin-bottom: 10px; padding: 14px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:600;">${d.donor?.name || 'Unknown Donor'} donated ${d.bloodGroup}</div>
+            <div class="text-muted">${formatDate(d.donatedAt)} · ${d.units} unit(s)</div>
+          </div>
+          <span class="badge badge-green">✅ Complete</span>
+        </div>
+      </div>`).join('');
+  }
+
+  function openVerifyModal(donorId, donorName, action = 'approve') {
+    currentDonorId = donorId;
+    document.getElementById('modal-donor-name').textContent = `Verify: ${donorName}`;
+    document.getElementById('modal-action').value = action;
+    document.getElementById('modal-notes').value = '';
+    document.getElementById('verify-modal').classList.add('show');
+  }
+
+  function closeModal() { document.getElementById('verify-modal').classList.remove('show'); }
+
+  async function submitVerification() {
+    if (!currentDonorId) return;
+    const btn = document.getElementById('verify-submit-btn');
+    btn.innerHTML = '<span class="spinner"></span>';
+    btn.disabled = true;
+    const res = await api.put(`/hospitals/verify/${currentDonorId}`, {
+      action: document.getElementById('modal-action').value,
+      healthStatus: document.getElementById('modal-health').value,
+      notes: document.getElementById('modal-notes').value
+    });
+    btn.innerHTML = 'Submit'; btn.disabled = false;
+    if (res.success) { showToast(`Donor ${document.getElementById('modal-action').value}d successfully!`, 'success'); closeModal(); loadDashboard(); }
+    else showToast(res.message, 'error');
+  }
+
+  async function revokeVerification(donorId) {
+    if (confirm('Revoke this donor\'s verification?')) {
+      const res = await api.put(`/hospitals/verify/${donorId}`, { action: 'reject', healthStatus: 'ineligible' });
+      if (res.success) { showToast('Verification revoked', 'info'); loadDashboard(); }
+    }
+  }
+
+  async function loadNotifications() {
+    const res = await api.get('/notifications');
+    updateNotifBadge(res.unreadCount || 0);
+    const list = document.getElementById('notif-list');
+    if (!res.notifications?.length) { list.innerHTML = '<p class="text-muted" style="text-align:center;padding:16px;">No notifications</p>'; return; }
+    list.innerHTML = res.notifications.map(n => `<div class="notif-item ${n.read?'':'unread'}" onclick="api.put('/notifications/${n._id}/read')"><div class="notif-title">${n.title}</div><div class="notif-msg">${n.message}</div><div class="notif-time">${timeAgo(n.createdAt)}</div></div>`).join('');
+  }
+
+  function toggleNotifs() { document.getElementById('notif-panel').classList.toggle('show'); }
+  function showSection(name) {
+    ['overview','pending','verified','donations'].forEach(s => { const el = document.getElementById('section-'+s); if(el) el.style.display = s===name?'block':'none'; });
+    const titles = {overview:'Hospital Dashboard',pending:'Pending Verifications',verified:'Verified Donors',donations:'Donations'};
+    document.getElementById('page-title').textContent = titles[name] || '';
+  }
+  function logout() { clearAuth(); window.location.href = '/login.html'; }
+  document.addEventListener('click', (e) => { if(!e.target.closest('#notif-panel')&&!e.target.closest('#notif-btn')) document.getElementById('notif-panel').classList.remove('show'); });
+
+  init();
+</script>
+</body>
+</html>

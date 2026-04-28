@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register | Smart Blood Network System</title>
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    body { background: var(--dark-900); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+    .register-wrap { max-width: 640px; width: 100%; z-index: 1; }
+    .role-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 28px; }
+    .role-card {
+      background: var(--dark-600); border: 2px solid var(--dark-400);
+      border-radius: var(--radius); padding: 20px 16px; text-align: center;
+      cursor: pointer; transition: var(--transition);
+    }
+    .role-card:hover { border-color: var(--primary); }
+    .role-card.selected { border-color: var(--primary); background: rgba(220,38,38,0.1); }
+    .role-card .role-icon { font-size: 2rem; display: block; margin-bottom: 8px; }
+    .role-card .role-name { font-size: 0.95rem; font-weight: 600; display: block; }
+    .role-card .role-desc { font-size: 0.75rem; color: var(--gray-500); margin-top: 4px; display: block; }
+    .step-indicator { display: flex; align-items: center; gap: 0; margin-bottom: 32px; }
+    .step-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; border: 2px solid var(--dark-400); color: var(--gray-500); flex-shrink: 0; transition: var(--transition); }
+    .step-dot.active { border-color: var(--primary); background: var(--primary); color: white; }
+    .step-dot.done { border-color: #4ade80; background: #4ade80; color: white; }
+    .step-line { flex: 1; height: 2px; background: var(--dark-400); }
+    .step-line.done { background: #4ade80; }
+    .form-section { display: none; }
+    .form-section.active { display: block; animation: fadeIn 0.3s ease; }
+  </style>
+</head>
+<body>
+<div style="position: fixed; inset: 0; background: radial-gradient(ellipse at 70% 30%, rgba(220,38,38,0.12), transparent 60%), var(--dark-900); z-index: 0;"></div>
+
+<div class="register-wrap fade-in">
+  <div style="text-align: center; margin-bottom: 32px;">
+    <a href="index.html" class="nav-logo" style="display: inline-flex; margin-bottom: 16px;">
+      <div class="logo-icon">🩸</div>
+      <span>SmartBlood</span>
+    </a>
+    <h1 style="font-size: 1.8rem;">Create Your Account</h1>
+    <p style="color: var(--gray-500); font-size: 0.9rem;">Join the network. Save lives.</p>
+  </div>
+
+  <!-- Step indicator -->
+  <div class="step-indicator" style="margin-bottom: 32px;">
+    <div class="step-dot active" id="step-dot-1">1</div>
+    <div class="step-line" id="step-line-1"></div>
+    <div class="step-dot" id="step-dot-2">2</div>
+    <div class="step-line" id="step-line-2"></div>
+    <div class="step-dot" id="step-dot-3">3</div>
+  </div>
+
+  <div class="card-glass">
+    <div id="error-msg" class="alert alert-danger" style="display:none"></div>
+
+    <!-- Step 1: Choose Role -->
+    <div class="form-section active" id="step-1">
+      <h3 style="margin-bottom: 6px;">Choose Your Role</h3>
+      <p class="text-muted" style="margin-bottom: 20px;">Select how you want to participate in SmartBlood</p>
+      <div class="role-grid">
+        <div class="role-card" id="role-donor" onclick="selectRole('donor')">
+          <span class="role-icon">🩸</span>
+          <span class="role-name">Donor</span>
+          <span class="role-desc">Register to donate blood to those in need</span>
+        </div>
+        <div class="role-card" id="role-patient" onclick="selectRole('patient')">
+          <span class="role-icon">👤</span>
+          <span class="role-name">Patient / Family</span>
+          <span class="role-desc">Find blood donors for yourself or family</span>
+        </div>
+        <div class="role-card" id="role-hospital" onclick="selectRole('hospital')">
+          <span class="role-icon">🏥</span>
+          <span class="role-name">Hospital</span>
+          <span class="role-desc">Verify donors and manage blood records</span>
+        </div>
+        <div class="role-card" id="role-admin" onclick="selectRole('admin')">
+          <span class="role-icon">🛡️</span>
+          <span class="role-name">Government Admin</span>
+          <span class="role-desc">Oversee hospitals and system compliance</span>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width: 100%;" onclick="nextStep(2)" id="step1-next" disabled>Continue →</button>
+    </div>
+
+    <!-- Step 2: Basic Info -->
+    <div class="form-section" id="step-2">
+      <h3 style="margin-bottom: 6px;">Basic Information</h3>
+      <p class="text-muted" style="margin-bottom: 20px;">Tell us about yourself</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input class="form-input" type="text" id="name" placeholder="Your full name" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <input class="form-input" type="tel" id="phone" placeholder="10-digit number">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address *</label>
+        <input class="form-input" type="email" id="email" placeholder="you@example.com" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Password *</label>
+          <input class="form-input" type="password" id="password" placeholder="Min 6 characters" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password *</label>
+          <input class="form-input" type="password" id="confirm-password" placeholder="Repeat password" required>
+        </div>
+      </div>
+      <!-- Donor/Patient specific -->
+      <div id="health-fields" style="display: none;">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Blood Group *</label>
+            <select class="form-select" id="bloodGroup">
+              <option value="">Select blood group</option>
+              <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+              <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Age</label>
+            <input class="form-input" type="number" id="age" placeholder="e.g. 25" min="18" max="65">
+          </div>
+        </div>
+        <div class="form-group" id="weight-group">
+          <label class="form-label">Weight (kg) — Required for donors</label>
+          <input class="form-input" type="number" id="weight" placeholder="e.g. 65" min="50">
+        </div>
+      </div>
+      <!-- Hospital specific -->
+      <div id="hospital-fields" style="display: none;">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Hospital Name *</label>
+            <input class="form-input" type="text" id="hospitalName" placeholder="Full hospital name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">License Number *</label>
+            <input class="form-input" type="text" id="licenseNumber" placeholder="Govt license no.">
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px;">
+        <button class="btn btn-ghost" style="flex: 0.4;" onclick="nextStep(1)">← Back</button>
+        <button class="btn btn-primary" style="flex: 1;" onclick="nextStep(3)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Location & Submit -->
+    <div class="form-section" id="step-3">
+      <h3 style="margin-bottom: 6px;">Your Location</h3>
+      <p class="text-muted" style="margin-bottom: 20px;">We use this to find nearby donors and requests</p>
+      <div class="form-group">
+        <label class="form-label">Address / Area</label>
+        <input class="form-input" type="text" id="address" placeholder="e.g. Shivajinagar, Pune">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Latitude</label>
+          <input class="form-input" type="number" id="lat" placeholder="e.g. 18.5204" step="any" readonly>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Longitude</label>
+          <input class="form-input" type="number" id="lng" placeholder="e.g. 73.8567" step="any" readonly>
+        </div>
+      </div>
+      <button class="btn btn-outline btn-sm" id="locate-btn" onclick="getLocation()" style="margin-bottom: 20px; width: 100%;">
+        📍 Use My Current Location
+      </button>
+      <div id="step3-summary" class="alert alert-info" style="display: none;"></div>
+      <div style="display: flex; gap: 12px;">
+        <button class="btn btn-ghost" style="flex: 0.4;" onclick="nextStep(2)">← Back</button>
+        <button class="btn btn-primary" style="flex: 1;" onclick="submitRegistration()" id="submit-btn">
+          Create Account 🎉
+        </button>
+      </div>
+      <p style="text-align: center; font-size: 0.8rem; color: var(--gray-600); margin-top: 16px;">
+        Already have an account? <a href="login.html" style="color: var(--primary-light);">Sign in</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  let selectedRole = null;
+  const urlParams = new URLSearchParams(window.location.search);
+  const preRole = urlParams.get('role');
+  if (preRole) { setTimeout(() => selectRole(preRole), 100); }
+
+  function selectRole(role) {
+    selectedRole = role;
+    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('role-' + role)?.classList.add('selected');
+    document.getElementById('step1-next').disabled = false;
+    document.getElementById('health-fields').style.display = (role === 'donor' || role === 'patient') ? 'block' : 'none';
+    document.getElementById('hospital-fields').style.display = role === 'hospital' ? 'block' : 'none';
+    document.getElementById('weight-group').style.display = role === 'donor' ? 'block' : 'none';
+  }
+
+  function nextStep(step) {
+    if (step === 2 && !selectedRole) { showToast('Please select a role first', 'warning'); return; }
+    if (step === 3) {
+      if (!document.getElementById('name').value || !document.getElementById('email').value) {
+        showToast('Please fill in all required fields', 'warning'); return;
+      }
+      if (document.getElementById('password').value !== document.getElementById('confirm-password').value) {
+        showToast('Passwords do not match', 'error'); return;
+      }
+      // Show summary
+      const summary = `Ready to register as: <strong>${selectedRole.toUpperCase()}</strong>`;
+      document.getElementById('step3-summary').innerHTML = summary;
+      document.getElementById('step3-summary').style.display = 'flex';
+    }
+    document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('step-' + step).classList.add('active');
+    [1,2,3].forEach(i => {
+      const dot = document.getElementById('step-dot-' + i);
+      dot.className = 'step-dot' + (i < step ? ' done' : i === step ? ' active' : '');
+      if (i < 3) document.getElementById('step-line-' + i).className = 'step-line' + (i < step ? ' done' : '');
+    });
+  }
+
+  function getLocation() {
+    const btn = document.getElementById('locate-btn');
+    btn.textContent = '⏳ Getting location...';
+    navigator.geolocation.getCurrentPosition(pos => {
+      document.getElementById('lat').value = pos.coords.latitude.toFixed(6);
+      document.getElementById('lng').value = pos.coords.longitude.toFixed(6);
+      btn.textContent = '✅ Location captured!';
+      showToast('Location captured successfully!', 'success');
+    }, () => {
+      // Use Pune default
+      document.getElementById('lat').value = 18.5204;
+      document.getElementById('lng').value = 73.8567;
+      btn.textContent = '📍 Default location used (Pune)';
+      showToast('Using default location (Pune). You can update later.', 'info');
+    });
+  }
+
+  async function submitRegistration() {
+    const btn = document.getElementById('submit-btn');
+    btn.innerHTML = '<span class="spinner"></span> Creating account...';
+    btn.disabled = true;
+
+    const lat = parseFloat(document.getElementById('lat').value) || 18.5204;
+    const lng = parseFloat(document.getElementById('lng').value) || 73.8567;
+
+    const body = {
+      role: selectedRole,
+      name: document.getElementById('name').value,
+      email: document.getElementById('email').value,
+      password: document.getElementById('password').value,
+      phone: document.getElementById('phone').value,
+      bloodGroup: document.getElementById('bloodGroup')?.value || undefined,
+      age: parseInt(document.getElementById('age')?.value) || undefined,
+      weight: parseInt(document.getElementById('weight')?.value) || undefined,
+      hospitalName: document.getElementById('hospitalName')?.value || undefined,
+      licenseNumber: document.getElementById('licenseNumber')?.value || undefined,
+      location: { type: 'Point', coordinates: [lng, lat], address: document.getElementById('address').value }
+    };
+
+    const data = await api.post('/auth/register', body);
+    if (data.success) {
+      setAuth(data.token, data.user);
+      showToast('Account created! Welcome to SmartBlood 🎉', 'success');
+      setTimeout(() => { window.location.href = `/${data.user.role}/dashboard.html`; }, 800);
+    } else {
+      document.getElementById('error-msg').textContent = data.message;
+      document.getElementById('error-msg').style.display = 'flex';
+      btn.innerHTML = 'Create Account 🎉';
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>

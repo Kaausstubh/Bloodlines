@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Blood Network System | Save Lives, Connect Donors</title>
+  <meta name="description" content="Real-time, location-based blood donor platform connecting verified donors with patients in need. Find compatible blood donors near you instantly.">
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    .ticker-wrap {
+      overflow: hidden; background: rgba(220,38,38,0.1); border-top: 1px solid rgba(220,38,38,0.2);
+      border-bottom: 1px solid rgba(220,38,38,0.2); padding: 10px 0; white-space: nowrap;
+    }
+    .ticker {
+      display: inline-block;
+      animation: ticker 30s linear infinite;
+    }
+    .ticker-item { display: inline-block; margin-right: 60px; font-size: 0.85rem; color: var(--red-400); }
+    .ticker-item span { color: white; font-weight: 600; }
+    @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    .hero-visual {
+      position: relative; display: flex; align-items: center; justify-content: center;
+    }
+    .hero-circle {
+      width: 400px; height: 400px; border-radius: 50%;
+      background: radial-gradient(circle at 40% 40%, rgba(220,38,38,0.3), rgba(10,10,10,0.8));
+      border: 1px solid rgba(220,38,38,0.2); position: relative;
+      display: flex; align-items: center; justify-content: center;
+      animation: rotateSlow 20s linear infinite;
+    }
+    @keyframes rotateSlow { to { transform: rotate(360deg); } }
+    .hero-circle-inner {
+      width: 220px; height: 220px; border-radius: 50%;
+      background: rgba(10,10,10,0.9); border: 2px solid rgba(220,38,38,0.4);
+      display: flex; align-items: center; justify-content: center; flex-direction: column;
+      animation: rotateSlow 20s linear infinite reverse;
+      box-shadow: 0 0 60px rgba(220,38,38,0.3);
+    }
+    .hero-circle-inner .icon { font-size: 4rem; }
+    .hero-circle-inner p { font-size: 0.8rem; color: var(--gray-400); margin-top: 8px; }
+    .orbit-dot {
+      position: absolute; width: 14px; height: 14px; border-radius: 50%;
+      background: var(--primary); box-shadow: 0 0 12px var(--primary);
+    }
+    .orbit-dot:nth-child(2) { top: 10%; left: 50%; }
+    .orbit-dot:nth-child(3) { top: 50%; right: 5%; }
+    .orbit-dot:nth-child(4) { bottom: 10%; left: 30%; }
+    .orbit-dot:nth-child(5) { top: 30%; left: 5%; }
+    .testimonial-card {
+      background: var(--dark-700); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg); padding: 28px;
+    }
+    .testimonial-card .quote { font-size: 2rem; line-height: 1; color: var(--primary); margin-bottom: 12px; }
+    .testimonial-card p { color: var(--gray-300); font-size: 0.95rem; line-height: 1.7; }
+    .testimonial-card .author { display: flex; align-items: center; gap: 12px; margin-top: 20px; }
+    .author-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-dark), var(--primary)); display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .live-counter { background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.2); border-radius: var(--radius-full); padding: 6px 14px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 8px; }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; animation: pulseDot 2s infinite; }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="container">
+    <div class="nav-logo">
+      <div class="logo-icon">🩸</div>
+      <span>SmartBlood</span>
+    </div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#blood-groups">Blood Groups</a>
+      <a href="map.html">Live Map</a>
+    </div>
+    <div class="nav-actions" id="nav-actions">
+      <div class="live-counter">
+        <span class="live-dot"></span>
+        <span id="live-donors">Loading...</span>
+      </div>
+      <a href="login.html" class="btn btn-outline btn-sm">Sign In</a>
+      <a href="register.html" class="btn btn-primary btn-sm">Register</a>
+    </div>
+  </div>
+</nav>
+
+<!-- LIVE TICKER -->
+<div style="margin-top: 72px;">
+  <div class="ticker-wrap">
+    <div class="ticker" id="ticker">
+      🚨 URGENT: <span>O- blood needed</span> in Shivajinagar, Pune &nbsp;|&nbsp;
+      ✅ <span>Blood request fulfilled</span> — Donor reached in 8 minutes &nbsp;|&nbsp;
+      🩸 New verified donor: <span>B+ available</span> in Kothrud &nbsp;|&nbsp;
+      ⚠️ <span>A+ Urgently needed</span> at Ruby Hall Clinic &nbsp;|&nbsp;
+      🎉 <span>500+ lives saved</span> through SmartBlood this month &nbsp;|&nbsp;
+      🚨 URGENT: <span>O- blood needed</span> in Shivajinagar, Pune &nbsp;|&nbsp;
+      ✅ <span>Blood request fulfilled</span> — Donor reached in 8 minutes &nbsp;|&nbsp;
+      🩸 New verified donor: <span>B+ available</span> in Kothrud &nbsp;|&nbsp;
+      ⚠️ <span>A+ Urgently needed</span> at Ruby Hall Clinic &nbsp;|&nbsp;
+      🎉 <span>500+ lives saved</span> through SmartBlood this month
+    </div>
+  </div>
+</div>
+
+<!-- HERO SECTION -->
+<section class="hero" style="padding-top: 0; margin-top: 0;">
+  <div class="blood-cells" id="blood-cells"></div>
+  <div class="container" style="padding: 80px 24px;">
+    <div class="grid-2" style="align-items: center; gap: 60px;">
+      <div class="hero-content fade-in">
+        <div class="hero-badge">
+          <span>🔴</span>
+          <span>Real-time Blood Donor Network</span>
+        </div>
+        <h1>
+          Every Drop<br>
+          <span class="text-gradient">Saves a Life</span>
+        </h1>
+        <p>Connect with verified blood donors near you in seconds. Emergency requests reach nearby donors instantly. Hospital-verified. Government-approved.</p>
+        <div class="hero-actions">
+          <a href="register.html?role=patient" class="btn btn-emergency btn-lg" id="emergency-cta">
+            🚨 Request Blood Now
+          </a>
+          <a href="register.html?role=donor" class="btn btn-outline btn-lg">
+            🩸 Become a Donor
+          </a>
+        </div>
+        <div class="hero-stats" id="hero-stats">
+          <div class="hero-stat">
+            <div class="value" id="stat-donors">2,500+</div>
+            <div class="label">Verified Donors</div>
+          </div>
+          <div class="hero-stat">
+            <div class="value" id="stat-requests">10,000+</div>
+            <div class="label">Requests Fulfilled</div>
+          </div>
+          <div class="hero-stat">
+            <div class="value" id="stat-hospitals">150+</div>
+            <div class="label">Partner Hospitals</div>
+          </div>
+          <div class="hero-stat">
+            <div class="value">8 min</div>
+            <div class="label">Avg Response Time</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-circle">
+          <span class="orbit-dot"></span>
+          <span class="orbit-dot"></span>
+          <span class="orbit-dot"></span>
+          <span class="orbit-dot"></span>
+          <div class="hero-circle-inner">
+            <div class="icon">🩸</div>
+            <p>Smart Blood<br>Network</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="section-title">
+      <div class="section-tag">Platform Features</div>
+      <h2>Everything You Need to <span class="text-gradient">Save Lives</span></h2>
+      <p>A complete ecosystem connecting donors, patients, hospitals, and government — all in one place.</p>
+    </div>
+    <div class="grid-3" id="features-grid">
+      <div class="card feature-card fade-in">
+        <div class="feature-icon">🚨</div>
+        <h3>Emergency Mode</h3>
+        <p>One-click emergency requests instantly notify all nearby compatible donors and hospitals via real-time alerts.</p>
+      </div>
+      <div class="card feature-card fade-in">
+        <div class="feature-icon">🧠</div>
+        <h3>AI Donor Matching</h3>
+        <p>Smart algorithm ranks donors by blood compatibility, distance, response history, and donation recency.</p>
+      </div>
+      <div class="card feature-card fade-in">
+        <div class="feature-icon">🗺️</div>
+        <h3>Live Map View</h3>
+        <p>Real-time map showing verified donors, hospitals, and open blood requests within your selected radius.</p>
+      </div>
+      <div class="card feature-card fade-in">
+        <div class="feature-icon">🏥</div>
+        <h3>Hospital Verification</h3>
+        <p>Only certified, government-approved hospitals can verify donors, ensuring maximum safety and trust.</p>
+      </div>
+      <div class="card feature-card fade-in">
+        <div class="feature-icon">✅</div>
+        <h3>Eligibility Checks</h3>
+        <p>Automatic checks for donation gap (56 days), age, weight, and health status block ineligible donors.</p>
+      </div>
+      <div class="card feature-card fade-in">
+        <div class="feature-icon">🛡️</div>
+        <h3>Government Oversight</h3>
+        <p>Government admin panel approves hospitals, schedules inspections, and monitors system integrity.</p>
+      </div>
+      <div class="card feature-card fade-in">
+        <div class="feature-icon">🔔</div>
+        <h3>Smart Notifications</h3>
+        <p>Real-time Socket.IO alerts notify donors when someone nearby needs blood and when they become eligible.</p>
+      </div>
+      <div class="card feature-card fade-in">
+        <div class="feature-icon">⭐</div>
+        <h3>Donor Reputation</h3>
+        <p>Patients rate donors after successful donations, building a trusted reputation system.</p>
+      </div>
+      <div class="card feature-card fade-in">
+        <div class="feature-icon">🔐</div>
+        <h3>Privacy Control</h3>
+        <p>Donors choose public, semi-private, or private profiles. Full control over who can see your information.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how-it-works" style="background: var(--dark-800);">
+  <div class="container">
+    <div class="section-title">
+      <div class="section-tag">Process</div>
+      <h2>How It <span class="text-gradient">Works</span></h2>
+      <p>From registration to saving a life — seamlessly simple.</p>
+    </div>
+    <div class="grid-4">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <div class="step-connector"></div>
+        <h3>Register</h3>
+        <p style="color: var(--gray-400); font-size: 0.9rem; margin-top: 8px;">Sign up as donor, patient, or hospital with your basic info and role.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <div class="step-connector"></div>
+        <h3>Get Verified</h3>
+        <p style="color: var(--gray-400); font-size: 0.9rem; margin-top: 8px;">Donors visit a certified hospital for a quick health check and verification.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <div class="step-connector"></div>
+        <h3>Get Matched</h3>
+        <p style="color: var(--gray-400); font-size: 0.9rem; margin-top: 8px;">AI matches patients with the best compatible, nearby, verified donors.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">4</div>
+        <h3>Save a Life</h3>
+        <p style="color: var(--gray-400); font-size: 0.9rem; margin-top: 8px;">Donor contacts patient, donates at certified hospital, earns reputation points.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BLOOD GROUPS -->
+<section class="section" id="blood-groups">
+  <div class="container">
+    <div class="section-title">
+      <div class="section-tag">Compatibility</div>
+      <h2>Find Donors by <span class="text-gradient">Blood Group</span></h2>
+      <p>Select your blood group to see compatible donors on the live map.</p>
+    </div>
+    <div class="blood-group-grid" style="max-width: 600px; margin: 0 auto 32px;">
+      <div class="blood-group-card" onclick="goToMap('A+')"><div class="bg-label">A+</div><p style="font-size:0.8rem;color:var(--gray-400);margin-top:4px">Universal</p></div>
+      <div class="blood-group-card" onclick="goToMap('A-')"><div class="bg-label">A-</div><p style="font-size:0.8rem;color:var(--gray-400);margin-top:4px">Rare</p></div>
+      <div class="blood-group-card" onclick="goToMap('B+')"><div class="bg-label">B+</div><p style="font-size:0.8rem;color:var(--gray-400);margin-top:4px">Common</p></div>
+      <div class="blood-group-card" onclick="goToMap('B-')"><div class="bg-label">B-</div><p style="font-size:0.8rem;color:var(--gray-400);margin-top:4px">Rare</p></div>
+      <div class="blood-group-card" onclick="goToMap('AB+')"><div class="bg-label">AB+</div><p style="font-size:0.8rem;color:var(--gray-400);margin-top:4px">Universal Recipient</p></div>
+      <div class="blood-group-card" onclick="goToMap('AB-')"><div class="bg-label">AB-</div><p style="font-size:0.8rem;color:var(--gray-400);margin-top:4px">Very Rare</p></div>
+      <div class="blood-group-card" onclick="goToMap('O+')"><div class="bg-label">O+</div><p style="font-size:0.8rem;color:var(--gray-400);margin-top:4px">Most Common</p></div>
+      <div class="blood-group-card" onclick="goToMap('O-')"><div class="bg-label">O-</div><p style="font-size:0.8rem;color:var(--gray-400);margin-top:4px">Universal Donor</p></div>
+    </div>
+    <div style="text-align: center;">
+      <a href="map.html" class="btn btn-primary btn-lg">🗺️ Open Live Map</a>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="section" style="background: var(--dark-800);">
+  <div class="container">
+    <div class="section-title">
+      <div class="section-tag">Stories</div>
+      <h2>Lives <span class="text-gradient">Saved</span></h2>
+    </div>
+    <div class="grid-3">
+      <div class="testimonial-card">
+        <div class="quote">"</div>
+        <p>My father needed O- blood urgently. SmartBlood found a verified donor 1.2km away in under 10 minutes. They literally saved his life.</p>
+        <div class="author">
+          <div class="author-avatar">R</div>
+          <div>
+            <div style="font-weight:600;font-size:0.9rem">Ravi Thakur</div>
+            <div style="color:var(--gray-500);font-size:0.8rem">Patient's Son, Pune</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="quote">"</div>
+        <p>As a donor, I love that I get notified only when I'm eligible and someone nearby truly needs my blood type. The process is so easy!</p>
+        <div class="author">
+          <div class="author-avatar">S</div>
+          <div>
+            <div style="font-weight:600;font-size:0.9rem">Sneha Joshi</div>
+            <div style="color:var(--gray-500);font-size:0.8rem">Donor, A+ (12 donations)</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="quote">"</div>
+        <p>The hospital verification dashboard is excellent. We can verify donors quickly, track records, and the real-time notifications work perfectly.</p>
+        <div class="author">
+          <div class="author-avatar">D</div>
+          <div>
+            <div style="font-weight:600;font-size:0.9rem">Dr. Priya Mehta</div>
+            <div style="color:var(--gray-500);font-size:0.8rem">Director, KEM Hospital</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BANNER -->
+<section class="section">
+  <div class="container">
+    <div style="background: linear-gradient(135deg, rgba(220,38,38,0.2), rgba(185,28,28,0.1)); border: 1px solid rgba(220,38,38,0.3); border-radius: var(--radius-xl); padding: 60px 48px; text-align: center;">
+      <h2 style="font-size: 2.5rem; margin-bottom: 16px;">Ready to Make a Difference?</h2>
+      <p style="color: var(--gray-400); margin-bottom: 36px; font-size: 1.05rem;">Join thousands of verified donors across India. One registration. Unlimited lives saved.</p>
+      <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+        <a href="register.html?role=donor" class="btn btn-primary btn-xl">🩸 Register as Donor</a>
+        <a href="register.html?role=hospital" class="btn btn-outline btn-xl">🏥 Register Hospital</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="nav-logo" style="margin-bottom: 12px;">
+          <div class="logo-icon">🩸</div>
+          <span>SmartBlood</span>
+        </div>
+        <p>A government-backed, real-time blood donor network connecting verified donors with patients in need. Hospital-verified. Privacy-first. Life-saving.</p>
+      </div>
+      <div>
+        <h4>Platform</h4>
+        <ul class="footer-links">
+          <li><a href="map.html">Live Map</a></li>
+          <li><a href="register.html?role=donor">Become Donor</a></li>
+          <li><a href="register.html?role=patient">Request Blood</a></li>
+          <li><a href="register.html?role=hospital">Hospital Portal</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Resources</h4>
+        <ul class="footer-links">
+          <li><a href="#">Blood Types Guide</a></li>
+          <li><a href="#">Donor Eligibility</a></li>
+          <li><a href="#">FAQs</a></li>
+          <li><a href="#">Contact Us</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <ul class="footer-links">
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+          <li><a href="#">Cookie Policy</a></li>
+          <li><a href="#">Government Portal</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Smart Blood Network System. All rights reserved.</p>
+      <p>🇮🇳 Made in India | Ministry of Health & Family Welfare</p>
+    </div>
+  </div>
+</footer>
+
+<script src="js/api.js"></script>
+<script>
+  const user = typeof getUser === 'function' ? getUser() : null;
+  if (user) {
+    const navActions = document.getElementById('nav-actions');
+    if (navActions) {
+      navActions.innerHTML = `
+        <div class="live-counter">
+          <span class="live-dot"></span>
+          <span id="live-donors">Loading...</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-left: 10px;">
+          <span style="font-size: 0.9rem; font-weight: 500; color: var(--gray-300);">
+            <span style="color: var(--primary-light); text-transform: capitalize;">${user.role}</span>
+             - ${user.name || 'User'}
+          </span>
+          <a href="${user.role}/dashboard.html" class="btn btn-primary btn-sm">Dashboard</a>
+          <button onclick="clearAuth(); window.location.reload();" class="btn btn-outline btn-sm">Logout</button>
+        </div>
+      `;
+    }
+  }
+
+  // Animated blood cells
+  const container = document.getElementById('blood-cells');
+  for (let i = 0; i < 20; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'blood-cell';
+    cell.style.cssText = `left: ${Math.random() * 100}%; width: ${4 + Math.random() * 10}px; height: ${4 + Math.random() * 10}px; animation-duration: ${8 + Math.random() * 12}s; animation-delay: ${Math.random() * 8}s;`;
+    container.appendChild(cell);
+  }
+
+  // Load live stats
+  async function loadStats() {
+    try {
+      const res = await fetch('http://localhost:3000/api/admin/analytics', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('sbn_token') || ''}` }
+      });
+      // Fallback to static if not authenticated
+    } catch(e) {}
+    document.getElementById('live-donors').textContent = '12 donors online';
+  }
+  loadStats();
+
+  function goToMap(bloodGroup) {
+    window.location.href = `map.html?bloodGroup=${bloodGroup}`;
+  }
+</script>
+</body>
+</html>

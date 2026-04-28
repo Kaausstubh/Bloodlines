@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Donor Dashboard | SmartBlood</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="page-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🩸</div>
+      <span>SmartBlood</span>
+    </div>
+    <div class="sidebar-section-label">Donor Menu</div>
+    <ul class="sidebar-nav">
+      <li><a href="#" class="active" onclick="showSection('overview')"><span class="nav-icon">📊</span>Overview</a></li>
+      <li><a href="#" onclick="showSection('requests')"><span class="nav-icon">🩸</span>Blood Requests</a></li>
+      <li><a href="#" onclick="showSection('history')"><span class="nav-icon">📋</span>My Donations</a></li>
+      <li><a href="#" onclick="showSection('book-slot')"><span class="nav-icon">🏥</span>Book Slot</a></li>
+      <li><a href="../map.html"><span class="nav-icon">🗺️</span>Live Map</a></li>
+      <li><a href="#" onclick="showSection('profile')"><span class="nav-icon">👤</span>My Profile</a></li>
+      <li><a href="#" onclick="showSection('settings')"><span class="nav-icon">⚙️</span>Settings</a></li>
+    </ul>
+    <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; border-top: 1px solid var(--glass-border);">
+      <button class="btn btn-ghost btn-sm" style="width: 100%;" onclick="logout()">🚪 Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <div class="dashboard-header">
+      <div>
+        <div class="page-title" id="page-title">Dashboard</div>
+        <div class="text-muted" id="greeting"></div>
+      </div>
+      <div class="user-menu">
+        <div style="position: relative;">
+          <button class="btn btn-ghost btn-icon" onclick="toggleNotifs()" id="notif-btn">🔔</button>
+          <span id="notif-badge" style="position: absolute; top: -4px; right: -4px; background: var(--primary); color: white; font-size: 0.65rem; width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-weight: 700;"></span>
+        </div>
+        <a href="../map.html" class="btn btn-outline btn-sm">🗺️ Live Map</a>
+        <div class="user-avatar" id="user-avatar">D</div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATION PANEL -->
+    <div class="notif-panel" id="notif-panel">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <strong style="font-size:0.9rem;">Notifications</strong>
+        <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
+      </div>
+      <div id="notif-list"><div class="loading-full" style="height:80px"><span class="spinner"></span></div></div>
+    </div>
+
+    <div class="dashboard-content">
+      <!-- OVERVIEW SECTION -->
+      <div id="section-overview">
+        <!-- Eligibility Banner -->
+        <div id="eligibility-banner" style="margin-bottom: 24px;"></div>
+
+        <!-- Stats Row -->
+        <div class="grid-4" style="margin-bottom: 28px;" id="stats-row">
+          <div class="stat-card">
+            <div class="stat-icon">🩸</div>
+            <div class="stat-value" id="stat-donations">—</div>
+            <div class="stat-label">Total Donations</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-value" id="stat-rating">—</div>
+            <div class="stat-label">My Rating</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📅</div>
+            <div class="stat-value" id="stat-last-donation">—</div>
+            <div class="stat-label">Last Donation</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value" id="stat-status">—</div>
+            <div class="stat-label">Eligibility</div>
+          </div>
+        </div>
+
+        <!-- Nearby Requests -->
+        <div class="grid-2">
+          <div>
+            <h3 style="margin-bottom: 16px;">🚨 Nearby Blood Requests</h3>
+            <div id="requests-feed">
+              <div class="loading-full"><span class="spinner"></span><span>Loading requests...</span></div>
+            </div>
+          </div>
+          <div>
+            <h3 style="margin-bottom: 16px;">🏆 My Reputation</h3>
+            <div class="card">
+              <div style="text-align: center; padding: 16px 0;">
+                <div style="font-size: 3.5rem; font-weight: 800; color: var(--primary-light);" id="big-rating">—</div>
+                <div id="stars-display" style="justify-content: center; display: flex; gap: 6px; margin: 12px 0;"></div>
+                <p class="text-muted" id="rating-count"></p>
+              </div>
+              <div class="divider"></div>
+              <h4 style="margin-bottom: 12px; font-size: 0.9rem;">Donation Milestones</h4>
+              <div id="milestones"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REQUESTS SECTION -->
+      <div id="section-requests" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <h2>🩸 Blood Requests Near You</h2>
+          <div style="display: flex; gap: 8px;">
+            <select class="form-select" id="filter-urgency" onchange="loadRequests()" style="width: auto; padding: 8px 12px;">
+              <option value="">All Urgency</option>
+              <option value="emergency">Emergency</option>
+              <option value="urgent">Urgent</option>
+              <option value="normal">Normal</option>
+            </select>
+            <select class="form-select" id="filter-status" onchange="loadRequests()" style="width: auto; padding: 8px 12px;">
+              <option value="open">Open</option>
+              <option value="">All Status</option>
+            </select>
+          </div>
+        </div>
+        <div id="all-requests-list"></div>
+      </div>
+
+      <!-- HISTORY SECTION -->
+      <div id="section-history" style="display: none;">
+        <h2 style="margin-bottom: 24px;">📋 My Donation History</h2>
+        <div id="donation-history" class="timeline"></div>
+      </div>
+
+      <!-- BOOK SLOT SECTION -->
+      <div id="section-book-slot" style="display: none;">
+        <h2 style="margin-bottom: 24px;">🏥 Book a Donation Slot</h2>
+        <p class="text-muted" style="margin-bottom: 16px;">Select a verified hospital near you to schedule your next donation.</p>
+        <div id="hospitals-list" class="grid-2">
+          <div class="loading-full"><span class="spinner"></span><span>Loading hospitals...</span></div>
+        </div>
+      </div>
+
+      <!-- PROFILE SECTION -->
+      <div id="section-profile" style="display: none;">
+        <h2 style="margin-bottom: 24px;">👤 My Profile</h2>
+        <div class="grid-2">
+          <div class="card">
+            <h3 style="margin-bottom: 20px;">Personal Information</h3>
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input class="form-input" id="p-name" type="text">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <input class="form-input" id="p-phone" type="tel">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Age</label>
+                <input class="form-input" id="p-age" type="number">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Weight (kg)</label>
+                <input class="form-input" id="p-weight" type="number">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Blood Group</label>
+              <select class="form-select" id="p-blood">
+                <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+                <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="saveProfile()">💾 Save Changes</button>
+          </div>
+          <div class="card">
+            <h3 style="margin-bottom: 20px;">Privacy & Availability</h3>
+            <div class="form-group">
+              <label class="form-label">Profile Visibility</label>
+              <select class="form-select" id="p-privacy">
+                <option value="public">🌐 Public — Visible to all patients</option>
+                <option value="semi-private">🔒 Semi-Private — Hospitals & Emergencies only</option>
+                <option value="private">🔐 Private — Hidden from public</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-top: 20px;">
+              <label class="form-label">Available for Donation</label>
+              <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
+                <label class="toggle-label" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                  <input type="checkbox" id="p-available" style="width: 20px; height: 20px; accent-color: var(--primary);">
+                  <span id="available-label">Loading...</span>
+                </label>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div id="eligibility-detail"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  let currentUser = null;
+  let eligibilityData = null;
+
+  async function init() {
+    currentUser = requireAuth(['donor']);
+    if (!currentUser) return;
+
+    document.getElementById('user-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
+    document.getElementById('greeting').textContent = `Good to see you, ${currentUser.name}`;
+
+    await Promise.all([loadEligibility(), loadStats(), loadRequestsFeed(), loadNotifications()]);
+  }
+
+  async function loadEligibility() {
+    const res = await api.get('/donors/eligibility');
+    if (!res.success) return;
+    eligibilityData = res;
+    const { eligible, reason } = res.eligibility;
+    const banner = document.getElementById('eligibility-banner');
+    if (eligible) {
+      banner.innerHTML = `<div class="alert alert-success">✅ <strong>You are eligible to donate!</strong> ${reason}</div>`;
+      document.getElementById('stat-status').textContent = 'Eligible';
+      document.getElementById('stat-status').style.color = '#4ade80';
+    } else {
+      banner.innerHTML = `<div class="alert alert-warning">⚠️ <strong>Not eligible right now.</strong> ${reason} ${res.daysLeft > 0 ? `<br>⏳ Eligible again in <strong>${res.daysLeft} days</strong>` : ''}</div>`;
+      document.getElementById('stat-status').textContent = 'Not Eligible';
+      document.getElementById('stat-status').style.color = '#fbbf24';
+    }
+  }
+
+  async function loadStats() {
+    const user = await api.get('/auth/me');
+    if (!user.success) return;
+    const u = user.user;
+    currentUser = u;
+    document.getElementById('stat-donations').textContent = u.donationCount || 0;
+    document.getElementById('stat-rating').textContent = u.rating ? u.rating.toFixed(1) : 'N/A';
+    document.getElementById('stat-last-donation').textContent = u.lastDonationDate ? formatDate(u.lastDonationDate) : 'Never';
+    document.getElementById('big-rating').textContent = u.rating ? u.rating.toFixed(1) : '—';
+    document.getElementById('rating-count').textContent = `Based on ${u.ratingCount || 0} donations`;
+    // Stars
+    const stars = document.getElementById('stars-display');
+    stars.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+      const s = document.createElement('span');
+      s.className = 'star' + (i <= Math.round(u.rating) ? '' : ' empty');
+      s.textContent = '★';
+      s.style.fontSize = '1.5rem';
+      stars.appendChild(s);
+    }
+    // Milestones
+    const count = u.donationCount || 0;
+    const milestones = [
+      { label: '1st Donation', req: 1 }, { label: '5 Donations', req: 5 },
+      { label: '10 Donations', req: 10 }, { label: '20 Donations', req: 20 }
+    ];
+    document.getElementById('milestones').innerHTML = milestones.map(m => `
+      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div style="font-size: 0.875rem;">${count >= m.req ? '🏆' : '🔒'} ${m.label}</div>
+        <div class="badge ${count >= m.req ? 'badge-green' : 'badge-gray'}">${count >= m.req ? 'Earned' : `${count}/${m.req}`}</div>
+      </div>
+    `).join('');
+    // Profile form
+    document.getElementById('p-name').value = u.name || '';
+    document.getElementById('p-phone').value = u.phone || '';
+    document.getElementById('p-age').value = u.age || '';
+    document.getElementById('p-weight').value = u.weight || '';
+    document.getElementById('p-blood').value = u.bloodGroup || '';
+    document.getElementById('p-privacy').value = u.privacyLevel || 'public';
+    document.getElementById('p-available').checked = u.availableForDonation;
+    document.getElementById('available-label').textContent = u.availableForDonation ? 'Available for donation' : 'Not available';
+
+    // Eligibility detail
+    document.getElementById('eligibility-detail').innerHTML = `
+      <h4 style="margin-bottom: 12px; font-size: 0.9rem;">Verification Status</h4>
+      <div class="badge ${u.isVerified ? 'badge-green' : 'badge-yellow'}" style="display: inline-flex;">
+        ${u.isVerified ? '✅ Hospital Verified' : '⏳ Pending Verification'}
+      </div>
+      ${!u.isVerified ? `<p class="text-muted" style="margin-top: 8px;">Visit a certified hospital to get verified and appear on the donor map.</p>` : ''}
+    `;
+  }
+
+  async function loadRequestsFeed() {
+    const res = await api.get('/requests?status=open');
+    const container = document.getElementById('requests-feed');
+    if (!res.requests?.length) { container.innerHTML = '<p class="text-muted">No open requests nearby</p>'; return; }
+    container.innerHTML = res.requests.slice(0, 5).map(r => `
+      <div class="donor-card" style="margin-bottom: 12px; flex-direction: column; align-items: flex-start;">
+        <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            ${bloodBadge(r.bloodGroup)}
+            <div>
+              <div class="donor-name">${r.patientName}</div>
+              <div class="text-muted">${r.location?.address || 'Unknown location'} · ${timeAgo(r.createdAt)}</div>
+            </div>
+          </div>
+          ${urgencyBadge(r.urgency)}
+        </div>
+        <div style="display: flex; gap: 8px; width: 100%;">
+          <button class="btn btn-primary btn-sm" style="flex: 1;" onclick="acceptRequest('${r._id}')">✅ Accept</button>
+          <button class="btn btn-ghost btn-sm" style="flex: 0.5;" onclick="declineRequest('${r._id}')">Decline</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function loadRequests() {
+    const urgency = document.getElementById('filter-urgency')?.value;
+    const status = document.getElementById('filter-status')?.value || 'open';
+    let url = `/requests?status=${status}`;
+    if (urgency) url += `&urgency=${urgency}`;
+    const res = await api.get(url);
+    const container = document.getElementById('all-requests-list');
+    if (!res.requests?.length) { container.innerHTML = '<p class="text-muted">No requests found.</p>'; return; }
+    container.innerHTML = res.requests.map(r => `
+      <div class="card" style="margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; gap: 16px; align-items: center;">
+            ${bloodBadge(r.bloodGroup)}
+            <div>
+              <div style="font-weight: 600; margin-bottom: 2px;">${r.patientName}</div>
+              <div class="text-muted">${r.location?.address || '—'}</div>
+              <div class="text-muted">${timeAgo(r.createdAt)} · Units: ${r.unitsNeeded}</div>
+              ${r.contactPhone ? `<div class="text-muted">📞 ${r.contactPhone}</div>` : ''}
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            ${urgencyBadge(r.urgency)} ${statusBadge(r.status)}
+            ${r.status === 'open' ? `
+              <button class="btn btn-primary btn-sm" onclick="acceptRequest('${r._id}')">✅ Accept</button>
+              <button class="btn btn-danger btn-sm" onclick="declineRequest('${r._id}')">✗ Decline</button>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function loadDonationHistory() {
+    const res = await api.get('/donors/history');
+    const container = document.getElementById('donation-history');
+    if (!res.donations?.length) { container.innerHTML = '<p class="text-muted">No donations yet. Your history will appear here.</p>'; return; }
+    container.innerHTML = res.donations.map(d => `
+      <div class="timeline-item">
+        <div class="timeline-date">${formatDate(d.donatedAt)}</div>
+        <div class="timeline-title">${bloodBadge(d.bloodGroup)} ${d.units} unit(s) donated</div>
+        <div class="timeline-desc">
+          ${d.patient?.name ? `To: ${d.patient.name}` : ''}
+          ${d.hospital?.hospitalName ? ` · At: ${d.hospital.hospitalName}` : ''}
+          ${d.donorRating ? ` · Rated: ${'★'.repeat(d.donorRating)}` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function loadNotifications() {
+    const res = await api.get('/notifications');
+    updateNotifBadge(res.unreadCount || 0);
+    const list = document.getElementById('notif-list');
+    if (!res.notifications?.length) { list.innerHTML = '<p class="text-muted" style="text-align:center; padding: 16px;">No notifications</p>'; return; }
+    list.innerHTML = res.notifications.map(n => `
+      <div class="notif-item ${n.read ? '' : 'unread'} ${n.urgent ? 'urgent' : ''}" onclick="markRead('${n._id}')">
+        <div class="notif-title">${n.title}</div>
+        <div class="notif-msg">${n.message}</div>
+        <div class="notif-time">${timeAgo(n.createdAt)}</div>
+      </div>
+    `).join('');
+  }
+
+  async function acceptRequest(id) { const r = await api.put(`/requests/${id}/respond`, { status: 'accepted' }); if (r.success) { showToast('You accepted to donate! Contact the patient.', 'success'); loadRequestsFeed(); } else showToast(r.message, 'error'); }
+  async function declineRequest(id) { const r = await api.put(`/requests/${id}/respond`, { status: 'declined' }); if (r.success) { showToast('Request declined.', 'info'); loadRequestsFeed(); } }
+
+  async function saveProfile() {
+    const res = await api.put('/donors/profile', {
+      name: document.getElementById('p-name').value,
+      phone: document.getElementById('p-phone').value,
+      age: parseInt(document.getElementById('p-age').value),
+      weight: parseInt(document.getElementById('p-weight').value),
+      bloodGroup: document.getElementById('p-blood').value,
+      privacyLevel: document.getElementById('p-privacy').value,
+      availableForDonation: document.getElementById('p-available').checked
+    });
+    if (res.success) showToast('Profile updated!', 'success');
+    else showToast(res.message, 'error');
+  }
+
+  async function markRead(id) { await api.put(`/notifications/${id}/read`); loadNotifications(); }
+  async function markAllRead() { await api.put('/notifications/read-all'); loadNotifications(); }
+
+  function toggleNotifs() {
+    const panel = document.getElementById('notif-panel');
+    panel.classList.toggle('show');
+  }
+
+  function showSection(name) {
+    ['overview', 'requests', 'history', 'book-slot', 'profile', 'settings'].forEach(s => {
+      const el = document.getElementById('section-' + s);
+      if (el) el.style.display = s === name ? 'block' : 'none';
+    });
+    const titles = { overview: 'Dashboard', requests: 'Blood Requests', history: 'Donation History', 'book-slot': 'Book Slot', profile: 'My Profile', settings: 'Settings' };
+    document.getElementById('page-title').textContent = titles[name] || 'Dashboard';
+    document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+    if (name === 'requests') loadRequests();
+    if (name === 'history') loadDonationHistory();
+    if (name === 'book-slot') loadHospitalsForBooking();
+  }
+
+  async function loadHospitalsForBooking() {
+    const res = await api.get('/hospitals');
+    const container = document.getElementById('hospitals-list');
+    if (!res.hospitals?.length) { container.innerHTML = '<p class="text-muted">No verified hospitals found.</p>'; return; }
+    container.innerHTML = res.hospitals.filter(h => h.isApprovedByAdmin).map(h => `
+      <div class="card" style="margin-bottom: 16px;">
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+          <div class="stat-icon" style="flex-shrink: 0; font-size: 1.5rem;">🏥</div>
+          <div style="flex: 1;">
+            <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 4px;">${h.hospitalName || h.name}</div>
+            <div class="text-muted" style="font-size: 0.85rem; margin-bottom: 4px;">📍 ${h.location?.address || 'Location unavailable'}</div>
+            <div class="text-muted" style="font-size: 0.85rem; margin-bottom: 12px;">📞 ${h.phone || 'N/A'}</div>
+            <button class="btn btn-primary btn-sm" onclick="bookSlot('${h._id}')" ${!currentUser?.availableForDonation ? 'disabled' : ''}>${currentUser?.availableForDonation ? '📅 Book Slot Here' : 'Not Available for Donation'}</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function bookSlot(hospitalId) {
+    if (!confirm('Are you sure you want to book a donation slot at this hospital?')) return;
+    const res = await api.post('/donors/book-slot', { hospitalId, bloodGroup: currentUser.bloodGroup, units: 1 });
+    if (res.success) {
+      showToast('Slot booked successfully! The hospital will contact you.', 'success');
+      showSection('history');
+    } else {
+      showToast(res.message, 'error');
+    }
+  }
+
+  function logout() { clearAuth(); window.location.href = '/login.html'; }
+  document.addEventListener('click', (e) => { if (!e.target.closest('#notif-panel') && !e.target.closest('#notif-btn')) document.getElementById('notif-panel').classList.remove('show'); });
+
+  init();
+</script>
+</body>
+</html>

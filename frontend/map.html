@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Map | Smart Blood Network System</title>
+  <meta name="description" content="Real-time map showing verified blood donors, hospitals, and blood requests near you.">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/map.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body style="overflow: hidden; padding-top: 0;">
+
+<div class="map-page">
+  <!-- Sidebar -->
+  <div class="map-sidebar">
+    <div class="map-sidebar-header">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 16px;">
+        <a href="index.html" style="display:flex;align-items:center;gap:10px;font-weight:700;font-size:1rem;text-decoration:none;color:white;">
+          <div class="logo-icon" style="width:32px;height:32px;font-size:1rem;background:linear-gradient(135deg,var(--primary),var(--primary-dark));border-radius:8px;display:flex;align-items:center;justify-content:center;">🩸</div>
+          SmartBlood
+        </a>
+        <span class="badge badge-red" id="live-badge" style="animation: pulse-emergency 2s infinite;">● LIVE</span>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-group">
+        <span class="filter-label">Search Radius</span>
+        <div class="radius-btns">
+          <button class="radius-btn" data-radius="500" onclick="setRadius(500, this)">500m</button>
+          <button class="radius-btn" data-radius="1000" onclick="setRadius(1000, this)">1km</button>
+          <button class="radius-btn active" data-radius="2000" onclick="setRadius(2000, this)">2km</button>
+          <button class="radius-btn" data-radius="5000" onclick="setRadius(5000, this)">5km</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-label">Blood Group Filter</span>
+        <div class="blood-filter-btns">
+          <button class="blood-filter-btn active" onclick="setBloodFilter('', this)">All</button>
+          <button class="blood-filter-btn" onclick="setBloodFilter('A+', this)">A+</button>
+          <button class="blood-filter-btn" onclick="setBloodFilter('A-', this)">A-</button>
+          <button class="blood-filter-btn" onclick="setBloodFilter('B+', this)">B+</button>
+          <button class="blood-filter-btn" onclick="setBloodFilter('B-', this)">B-</button>
+          <button class="blood-filter-btn" onclick="setBloodFilter('AB+', this)">AB+</button>
+          <button class="blood-filter-btn" onclick="setBloodFilter('AB-', this)">AB-</button>
+          <button class="blood-filter-btn" onclick="setBloodFilter('O+', this)">O+</button>
+          <button class="blood-filter-btn" onclick="setBloodFilter('O-', this)">O-</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-label">Show on Map</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer;">
+            <input type="checkbox" id="show-donors" checked onchange="refreshMap()" style="accent-color:var(--primary);"> Donors
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer;">
+            <input type="checkbox" id="show-hospitals" checked onchange="refreshMap()" style="accent-color:var(--primary);"> Hospitals
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer;">
+            <input type="checkbox" id="show-requests" checked onchange="refreshMap()" style="accent-color:var(--primary);"> Requests
+          </label>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-label">Search Location (India)</span>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <input type="text" id="location-search" placeholder="City (e.g. Delhi)" class="form-input" style="flex:1;padding:6px;border-radius:4px;border:1px solid var(--glass-border);background:transparent;color:inherit;font-size:0.9rem;" onkeypress="if(event.key === 'Enter') searchLocation()">
+          <button class="btn btn-primary btn-sm" onclick="searchLocation()" style="padding:6px 12px;">🔍 Go</button>
+        </div>
+        <select class="form-select" id="location-jump" onchange="jumpLocation(this.value)" style="margin-bottom: 8px; width: 100%; padding: 6px; background:rgba(0,0,0,0.1); color:inherit; border:1px solid var(--glass-border); border-radius:4px;">
+          <option value="">-- Quick Jump (Major Cities) --</option>
+          <option value="18.5204,73.8567">Pune</option>
+          <option value="12.8406,80.1534">VIT Chennai</option>
+          <option value="19.0760,72.8777">Mumbai</option>
+          <option value="28.6139,77.2090">Delhi</option>
+          <option value="12.9716,77.5946">Bangalore</option>
+          <option value="17.3850,78.4867">Hyderabad</option>
+          <option value="22.5726,88.3639">Kolkata</option>
+          <option value="23.0225,72.5714">Ahmedabad</option>
+          <option value="26.9124,75.7873">Jaipur</option>
+        </select>
+        <button class="btn btn-primary btn-sm" style="width:100%;" onclick="centerOnMe()">📍 My Location</button>
+      </div>
+    </div>
+
+    <!-- Results List -->
+    <div class="map-results" id="results-list">
+      <div class="loading-full"><span class="spinner"></span><span style="font-size:0.85rem;">Loading map data...</span></div>
+    </div>
+
+    <!-- Bottom Actions -->
+    <div style="padding: 16px; border-top: 1px solid var(--glass-border);">
+      <a href="register.html?role=patient" class="btn btn-emergency" style="width:100%;font-size:0.95rem;padding:14px;">🚨 Emergency Request</a>
+    </div>
+  </div>
+
+  <!-- Map Container -->
+  <div class="map-container">
+    <div id="map"></div>
+
+    <!-- Legend -->
+    <div class="map-legend">
+      <div class="legend-title">Legend</div>
+      <div class="legend-item"><div class="legend-dot donor"></div> Donor</div>
+      <div class="legend-item"><div class="legend-dot hospital"></div> Hospital</div>
+      <div class="legend-item"><div class="legend-dot request"></div> Blood Request</div>
+      <div class="legend-item"><div class="legend-dot emergency-dot"></div> Emergency</div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  let map, userLat = 18.5204, userLng = 73.8567;
+  let currentRadius = 2000;
+  let currentBloodFilter = '';
+  let markers = [];
+  let radiusCircle = null;
+  let userMarker = null;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const preBloodGroup = urlParams.get('bloodGroup');
+
+  function initMap() {
+    map = L.map('map', { zoomControl: false }).setView([userLat, userLng], 13);
+
+    // Dark tile layer
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+      maxZoom: 19
+    }).addTo(map);
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // Set pre-selected blood group
+    if (preBloodGroup) {
+      currentBloodFilter = preBloodGroup;
+      document.querySelectorAll('.blood-filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent === preBloodGroup || (preBloodGroup && btn.textContent === 'All' && false));
+      });
+    }
+
+    // Get user location
+    navigator.geolocation.getCurrentPosition(pos => {
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+      map.setView([userLat, userLng], 14);
+      placeUserMarker();
+      loadAndRender();
+    }, () => {
+      placeUserMarker();
+      loadAndRender();
+    });
+  }
+
+  function placeUserMarker() {
+    if (userMarker) map.removeLayer(userMarker);
+    const icon = L.divIcon({
+      className: 'custom-marker',
+      html: `<div style="width:18px;height:18px;border-radius:50%;background:#60a5fa;border:3px solid white;box-shadow:0 0 16px rgba(96,165,250,0.8);"></div>`,
+      iconSize: [18, 18], iconAnchor: [9, 9]
+    });
+    userMarker = L.marker([userLat, userLng], { icon }).addTo(map);
+    userMarker.bindPopup(`<div class="popup-inner"><h4>📍 You are here</h4></div>`);
+
+    if (radiusCircle) map.removeLayer(radiusCircle);
+    radiusCircle = L.circle([userLat, userLng], {
+      radius: currentRadius, color: 'rgba(220,38,38,0.8)', fillColor: 'rgba(220,38,38,0.05)',
+      fillOpacity: 1, weight: 1.5, dashArray: '5,5'
+    }).addTo(map);
+  }
+
+  async function loadAndRender() {
+    clearMarkers();
+    const results = [];
+
+    // Donors
+    if (document.getElementById('show-donors')?.checked !== false) {
+      const url = `/donors/nearby?lat=${userLat}&lng=${userLng}&radius=${currentRadius}${currentBloodFilter ? '&bloodGroup=' + currentBloodFilter : ''}`;
+      const res = await fetch('http://localhost:3000/api' + url).then(r => r.json()).catch(() => ({}));
+      if (res.donors) {
+        res.donors.forEach(d => {
+          const latlng = [d.location.coordinates[1], d.location.coordinates[0]];
+          const icon = L.divIcon({
+            className: 'custom-marker',
+            html: `<div class="marker-icon marker-donor" title="${d.name}">${d.bloodGroup || '?'}</div>`,
+            iconSize: [36, 36], iconAnchor: [18, 18]
+          });
+          const m = L.marker(latlng, { icon }).addTo(map);
+          m.bindPopup(`<div class="popup-inner">
+            <h4>🩸 ${d.name}</h4>
+            <p>Blood Group: <strong>${d.bloodGroup}</strong></p>
+            <p>⭐ Rating: ${d.rating?.toFixed(1) || 'N/A'} · 💉 ${d.donationCount || 0} donations</p>
+            <p>${d.location?.address || ''}</p>
+          </div>`);
+          markers.push(m);
+          results.push({ type: 'donor', data: d, latlng });
+        });
+      }
+    }
+
+    // Hospitals
+    if (document.getElementById('show-hospitals')?.checked !== false) {
+      const res = await fetch('http://localhost:3000/api/hospitals').then(r => r.json()).catch(() => ({}));
+      if (res.hospitals) {
+        res.hospitals.forEach(h => {
+          if (!h.location?.coordinates?.length || (h.location.coordinates[0] === 0)) return;
+          const latlng = [h.location.coordinates[1], h.location.coordinates[0]];
+          const icon = L.divIcon({
+            className: 'custom-marker',
+            html: `<div class="marker-icon marker-hospital">🏥</div>`,
+            iconSize: [36, 36], iconAnchor: [18, 18]
+          });
+          const m = L.marker(latlng, { icon }).addTo(map);
+          m.bindPopup(`<div class="popup-inner"><h4>🏥 ${h.hospitalName || h.name}</h4><p>Verified Hospital</p>${h.location?.address ? `<p>${h.location.address}</p>` : ''}</div>`);
+          markers.push(m);
+          results.push({ type: 'hospital', data: h, latlng });
+        });
+      }
+    }
+
+    // Blood Requests
+    if (document.getElementById('show-requests')?.checked !== false) {
+      let url = '/requests?status=open';
+      if (currentBloodFilter) url += `&bloodGroup=${currentBloodFilter}`;
+      const res = await fetch('http://localhost:3000/api' + url).then(r => r.json()).catch(() => ({}));
+      if (res.requests) {
+        res.requests.forEach(r => {
+          if (!r.location?.coordinates?.length) return;
+          const latlng = [r.location.coordinates[1], r.location.coordinates[0]];
+          const isEmergency = r.urgency === 'emergency';
+          const icon = L.divIcon({
+            className: 'custom-marker',
+            html: `<div class="marker-icon ${isEmergency ? 'marker-emergency' : 'marker-request'}">${r.bloodGroup}</div>`,
+            iconSize: [36, 36], iconAnchor: [18, 18]
+          });
+          const m = L.marker(latlng, { icon }).addTo(map);
+          m.bindPopup(`<div class="popup-inner">
+            <h4>${isEmergency ? '🚨' : '🩸'} ${r.patientName}</h4>
+            <p>Needs: <strong>${r.bloodGroup}</strong> · ${r.unitsNeeded} unit(s)</p>
+            <p>Urgency: ${r.urgency.toUpperCase()}</p>
+            ${r.contactPhone ? `<p>📞 ${r.contactPhone}</p>` : ''}
+            ${r.location?.address ? `<p>📍 ${r.location.address}</p>` : ''}
+          </div>`);
+          markers.push(m);
+          results.push({ type: isEmergency ? 'emergency' : 'request', data: r, latlng });
+        });
+      }
+    }
+
+    renderSidebarList(results);
+  }
+
+  function renderSidebarList(results) {
+    const c = document.getElementById('results-list');
+    if (!results.length) { c.innerHTML = '<p class="text-muted" style="padding: 16px;">No results in this area. Try increasing the radius.</p>'; return; }
+
+    const countDonors = results.filter(r => r.type === 'donor').length;
+    const countHospitals = results.filter(r => r.type === 'hospital').length;
+    const countRequests = results.filter(r => r.type !== 'donor' && r.type !== 'hospital').length;
+
+    c.innerHTML = `
+      <div style="margin-bottom: 12px; font-size: 0.8rem; color: var(--gray-400);">
+        🩸 ${countDonors} donors &nbsp;·&nbsp; 🏥 ${countHospitals} hospitals &nbsp;·&nbsp; 📋 ${countRequests} requests
+      </div>
+      ${results.map(item => {
+        if (item.type === 'donor') return `
+          <div class="map-result-item" onclick="map.flyTo([${item.latlng}], 16)">
+            <div class="result-type donor">DONOR</div>
+            <div style="font-weight:600;font-size:0.9rem;">${item.data.name}</div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+              <span class="badge badge-red" style="font-size:0.7rem;">${item.data.bloodGroup}</span>
+              <span style="font-size:0.78rem;color:var(--gray-400);">⭐ ${item.data.rating?.toFixed(1) || 'N/A'} · 💉 ${item.data.donationCount || 0}</span>
+            </div>
+          </div>`;
+        if (item.type === 'hospital') return `
+          <div class="map-result-item" onclick="map.flyTo([${item.latlng}], 16)">
+            <div class="result-type hospital">HOSPITAL</div>
+            <div style="font-weight:600;font-size:0.9rem;">${item.data.hospitalName || item.data.name}</div>
+            <div style="font-size:0.78rem;color:var(--gray-400);margin-top:4px;">✅ Verified Hospital</div>
+          </div>`;
+        const isEm = item.type === 'emergency';
+        return `
+          <div class="map-result-item ${isEm ? 'emergency' : ''}" onclick="map.flyTo([${item.latlng}], 16)">
+            <div class="result-type ${isEm ? 'emergency' : 'request'}">${isEm ? '🚨 EMERGENCY' : 'BLOOD REQUEST'}</div>
+            <div style="font-weight:600;font-size:0.9rem;">${item.data.patientName} — ${item.data.bloodGroup}</div>
+            <div style="font-size:0.78rem;color:var(--gray-400);margin-top:4px;">${item.data.location?.address || '—'}</div>
+          </div>`;
+      }).join('')}`;
+  }
+
+  function clearMarkers() {
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+  }
+
+  function setRadius(radius, btn) {
+    currentRadius = radius;
+    document.querySelectorAll('.radius-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    placeUserMarker();
+    loadAndRender();
+  }
+
+  function setBloodFilter(group, btn) {
+    currentBloodFilter = group;
+    document.querySelectorAll('.blood-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadAndRender();
+  }
+
+  function refreshMap() { loadAndRender(); }
+
+  function centerOnMe() {
+    navigator.geolocation.getCurrentPosition(pos => {
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+      map.flyTo([userLat, userLng], 14);
+      placeUserMarker();
+      loadAndRender();
+    }, () => { map.flyTo([userLat, userLng], 14); });
+  }
+
+  function jumpLocation(coordsString) {
+    if (!coordsString) return;
+    const coords = coordsString.split(',');
+    userLat = parseFloat(coords[0]);
+    userLng = parseFloat(coords[1]);
+    map.flyTo([userLat, userLng], 14);
+    placeUserMarker();
+    loadAndRender();
+  }
+
+  async function searchLocation() {
+    const input = document.getElementById('location-search').value.trim();
+    if (!input) return;
+    
+    // Simple UI feedback
+    const btn = document.querySelector('button[onclick="searchLocation()"]');
+    const oldHtml = btn.innerHTML;
+    btn.innerHTML = '⌛';
+    btn.disabled = true;
+    
+    try {
+      const resp = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(input)}&countrycodes=in&format=json&limit=1`);
+      const data = await resp.json();
+      if (data && data.length > 0) {
+        jumpLocation(`${data[0].lat},${data[0].lon}`);
+      } else {
+        alert('Location not found in India. Try another city.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Search failed.');
+    } finally {
+      btn.innerHTML = oldHtml;
+      btn.disabled = false;
+    }
+  }
+
+  // Init
+  initMap();
+
+  // Auto-refresh every 30 seconds
+  setInterval(loadAndRender, 30000);
+</script>
+</body>
+</html>

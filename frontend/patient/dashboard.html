@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patient Dashboard | SmartBlood</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <style>
+    .emergency-strip { background: linear-gradient(135deg, rgba(255,0,0,0.2), rgba(180,0,0,0.1)); border: 1px solid rgba(255,0,0,0.4); border-radius: var(--radius-xl); padding: 32px; text-align: center; margin-bottom: 28px; position: relative; overflow: hidden; }
+    .emergency-strip::before { content:''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(255,0,0,0.08), transparent); animation: pulse-emergency 2s infinite; }
+    .emergency-strip h2 { font-size: 1.5rem; margin-bottom: 8px; }
+    .emergency-strip p { color: var(--gray-400); margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+<div class="page-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🩸</div>
+      <span>SmartBlood</span>
+    </div>
+    <div class="sidebar-section-label">Patient Menu</div>
+    <ul class="sidebar-nav">
+      <li><a href="#" class="active" onclick="showSection('overview')"><span class="nav-icon">📊</span>Overview</a></li>
+      <li><a href="#" onclick="showSection('find')"><span class="nav-icon">🔍</span>Find Donors</a></li>
+      <li><a href="#" onclick="showSection('my-requests')"><span class="nav-icon">📋</span>My Requests</a></li>
+      <li><a href="#" onclick="showSection('new-request')"><span class="nav-icon">➕</span>New Request</a></li>
+      <li><a href="../map.html"><span class="nav-icon">🗺️</span>Live Map</a></li>
+      <li><a href="#" onclick="showSection('profile')"><span class="nav-icon">👤</span>My Profile</a></li>
+    </ul>
+    <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; border-top: 1px solid var(--glass-border);">
+      <button class="btn btn-ghost btn-sm" style="width: 100%;" onclick="logout()">🚪 Sign Out</button>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <div class="dashboard-header">
+      <div>
+        <div class="page-title" id="page-title">Dashboard</div>
+        <div class="text-muted" id="greeting"></div>
+      </div>
+      <div class="user-menu">
+        <div style="position: relative;">
+          <button class="btn btn-ghost btn-icon" onclick="toggleNotifs()" id="notif-btn">🔔</button>
+          <span id="notif-badge" style="position:absolute;top:-4px;right:-4px;background:var(--primary);color:white;font-size:0.65rem;width:18px;height:18px;border-radius:50%;display:none;align-items:center;justify-content:center;font-weight:700;"></span>
+        </div>
+        <div class="user-avatar" id="user-avatar">P</div>
+      </div>
+    </div>
+
+    <div class="notif-panel" id="notif-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <strong style="font-size:0.9rem;">Notifications</strong>
+        <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
+      </div>
+      <div id="notif-list"><div class="loading-full" style="height:80px"><span class="spinner"></span></div></div>
+    </div>
+
+    <div class="dashboard-content">
+      <!-- OVERVIEW -->
+      <div id="section-overview">
+        <div class="emergency-strip">
+          <h2>🚨 Need Blood Urgently?</h2>
+          <p>Click below to instantly notify nearby verified donors and hospitals</p>
+          <button class="btn btn-emergency" onclick="showSection('new-request')">🆘 Create Emergency Blood Request</button>
+        </div>
+
+        <div class="grid-4" style="margin-bottom: 28px;">
+          <div class="stat-card">
+            <div class="stat-icon">📋</div>
+            <div class="stat-value" id="stat-total">—</div>
+            <div class="stat-label">Total Requests</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value" id="stat-fulfilled">—</div>
+            <div class="stat-label">Fulfilled</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-value" id="stat-open">—</div>
+            <div class="stat-label">Open Requests</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🩸</div>
+            <div class="stat-value" id="stat-bg">—</div>
+            <div class="stat-label">Your Blood Group</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <h3 style="margin-bottom: 16px;">📋 Recent Requests</h3>
+            <div id="recent-requests"></div>
+          </div>
+          <div>
+            <h3 style="margin-bottom: 16px;">🩸 Compatible Donors Nearby</h3>
+            <div id="donors-preview"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FIND DONORS -->
+      <div id="section-find" style="display:none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+          <h2>🔍 Find Donors</h2>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <select class="form-select" id="find-blood" style="width: auto; padding: 8px 12px;" onchange="findDonors()">
+              <option value="">Any Blood Group</option>
+              <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+              <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+            </select>
+            <select class="form-select" id="find-radius" style="width: auto; padding: 8px 12px;" onchange="findDonors()">
+              <option value="500">500m</option>
+              <option value="1000">1 km</option>
+              <option value="2000">2 km</option>
+              <option value="5000" selected>5 km</option>
+              <option value="10000">10 km</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="findDonors()">🔍 Search</button>
+          </div>
+        </div>
+        <div id="donors-list">
+          <div class="loading-full"><span class="spinner"></span><span>Finding donors near you...</span></div>
+        </div>
+      </div>
+
+      <!-- MY REQUESTS -->
+      <div id="section-my-requests" style="display:none;">
+        <h2 style="margin-bottom: 24px;">📋 My Blood Requests</h2>
+        <div id="my-requests-list"></div>
+      </div>
+
+      <!-- NEW REQUEST FORM -->
+      <div id="section-new-request" style="display:none;">
+        <h2 style="margin-bottom: 24px;">➕ Create Blood Request</h2>
+        <div class="card" style="max-width: 680px;">
+          <div id="req-success" class="alert alert-success" style="display:none;"></div>
+          <div id="req-error" class="alert alert-danger" style="display:none;"></div>
+          <div class="form-group">
+            <label class="form-label">Patient Name *</label>
+            <input class="form-input" id="r-patient" placeholder="Full name of patient">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Blood Group Required *</label>
+              <select class="form-select" id="r-blood">
+                <option value="">Select blood group</option>
+                <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+                <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Units Needed</label>
+              <input class="form-input" id="r-units" type="number" value="1" min="1" max="10">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Urgency Level *</label>
+            <select class="form-select" id="r-urgency">
+              <option value="normal">Normal</option>
+              <option value="urgent">Urgent</option>
+              <option value="emergency">🚨 Emergency</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Hospital / Location Address</label>
+            <input class="form-input" id="r-address" placeholder="e.g. Ruby Hall Clinic, Pune">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Latitude</label>
+              <input class="form-input" id="r-lat" type="number" step="any">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Longitude</label>
+              <input class="form-input" id="r-lng" type="number" step="any">
+            </div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="getMyLocation()" style="margin-bottom: 16px;">📍 Use My Location</button>
+          <div class="form-group">
+            <label class="form-label">Contact Phone</label>
+            <input class="form-input" id="r-phone" placeholder="Mobile number for donors to call">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Additional Notes</label>
+            <textarea class="form-textarea" id="r-notes" placeholder="Any specific instructions or context..."></textarea>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <button class="btn btn-primary btn-lg" onclick="createRequest()" id="req-btn" style="flex: 1;">🩸 Submit Request</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROFILE -->
+      <div id="section-profile" style="display:none;">
+        <h2 style="margin-bottom: 24px;">👤 My Profile</h2>
+        <div class="card" style="max-width: 500px;">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="pp-name"></div>
+            <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="pp-phone"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Blood Group</label>
+              <select class="form-select" id="pp-blood"><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select>
+            </div>
+            <div class="form-group"><label class="form-label">Age</label><input class="form-input" id="pp-age" type="number"></div>
+          </div>
+          <button class="btn btn-primary" onclick="saveProfile()">💾 Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  let currentUser = null;
+
+  async function init() {
+    currentUser = requireAuth(['patient']);
+    if (!currentUser) return;
+    document.getElementById('user-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
+    document.getElementById('greeting').textContent = `Welcome, ${currentUser.name}`;
+    document.getElementById('stat-bg').textContent = currentUser.bloodGroup || '?';
+    await Promise.all([loadMyRequests(), loadDonorsPreview(), loadNotifications()]);
+  }
+
+  async function loadMyRequests() {
+    const res = await api.get('/requests/my');
+    const total = res.requests?.length || 0;
+    const fulfilled = res.requests?.filter(r => r.status === 'fulfilled').length || 0;
+    const open = res.requests?.filter(r => r.status === 'open').length || 0;
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-fulfilled').textContent = fulfilled;
+    document.getElementById('stat-open').textContent = open;
+
+    const recent = document.getElementById('recent-requests');
+    if (!res.requests?.length) { recent.innerHTML = '<p class="text-muted">No requests yet.</p>'; return; }
+    recent.innerHTML = res.requests.slice(0, 4).map(r => `
+      <div class="card" style="margin-bottom: 12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 8px;">
+          <div style="display:flex;gap:12px;align-items:center;">
+            ${bloodBadge(r.bloodGroup)}
+            <div>
+              <div style="font-weight:600;">${r.patientName}</div>
+              <div class="text-muted">${timeAgo(r.createdAt)}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;">${urgencyBadge(r.urgency)} ${statusBadge(r.status)}</div>
+        </div>
+        ${r.matchedDonors?.length ? `<div class="alert alert-success" style="margin-top:12px; padding: 8px 12px;">✅ ${r.matchedDonors.length} donor(s) matched!</div>` : ''}
+      </div>
+    `).join('');
+
+    // My requests list
+    const myList = document.getElementById('my-requests-list');
+    myList.innerHTML = res.requests.map(r => `
+      <div class="card" style="margin-bottom: 16px;">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div style="display:flex;gap:16px;align-items:center;">
+            ${bloodBadge(r.bloodGroup)}
+            <div>
+              <div style="font-weight:600;margin-bottom:2px;">${r.patientName} — ${r.unitsNeeded} unit(s)</div>
+              <div class="text-muted">${r.location?.address || '—'}</div>
+              <div class="text-muted">${formatDate(r.createdAt)}</div>
+            </div>
+          </div>
+          <div>${urgencyBadge(r.urgency)} ${statusBadge(r.status)}</div>
+        </div>
+        ${r.matchedDonors?.length ? `
+          <div class="divider"></div>
+          <p style="font-size:0.85rem;color:var(--gray-400);margin-bottom:8px;">Matched Donors (${r.matchedDonors.length})</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            ${r.matchedDonors.map(d => `<span class="badge badge-blue">🩸 ${d.name || 'Donor'} (${d.bloodGroup})</span>`).join('')}
+          </div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  async function loadDonorsPreview() {
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const res = await api.get(`/donors/nearby?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}&radius=5000&bloodGroup=${currentUser.bloodGroup || ''}`);
+      const preview = document.getElementById('donors-preview');
+      if (!res.donors?.length) { preview.innerHTML = '<p class="text-muted">No verified donors found nearby.</p>'; return; }
+      preview.innerHTML = res.donors.slice(0, 4).map(d => `
+        <div class="donor-card" style="margin-bottom: 12px;">
+          <div class="donor-avatar">${d.name?.charAt(0) || 'D'}</div>
+          <div class="donor-info">
+            <div class="donor-name">${d.name}</div>
+            <div class="donor-meta">${bloodBadge(d.bloodGroup)} <span>⭐ ${d.rating?.toFixed(1) || 'N/A'}</span> <span>💉 ${d.donationCount || 0} donations</span></div>
+          </div>
+          <div><span class="badge badge-green">✅ Verified</span></div>
+        </div>
+      `).join('');
+    }, () => {
+      document.getElementById('donors-preview').innerHTML = '<p class="text-muted">Enable location to see nearby donors.</p>';
+    });
+  }
+
+  async function findDonors() {
+    const container = document.getElementById('donors-list');
+    container.innerHTML = '<div class="loading-full"><span class="spinner"></span><span>Searching...</span></div>';
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const blood = document.getElementById('find-blood').value;
+      const radius = document.getElementById('find-radius').value;
+      const res = await api.get(`/donors/nearby?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}&radius=${radius}${blood ? '&bloodGroup=' + blood : ''}`);
+      if (!res.donors?.length) { container.innerHTML = '<div class="loading-full">No donors found in this radius.</div>'; return; }
+      container.innerHTML = `<p class="text-muted" style="margin-bottom:16px;">${res.count} donors found</p>` + res.donors.map(d => `
+        <div class="donor-card" style="margin-bottom: 12px;">
+          <div class="donor-avatar">${d.name?.charAt(0) || 'D'}</div>
+          <div class="donor-info">
+            <div class="donor-name">${d.name}</div>
+            <div class="donor-meta">${bloodBadge(d.bloodGroup)} <span>⭐ ${d.rating?.toFixed(1) || 'N/A'}</span> <span>💉 ${d.donationCount || 0} donations</span> <span>📍 ${d.location?.address || 'Nearby'}</span></div>
+          </div>
+          <span class="badge badge-green">✅ Verified</span>
+        </div>
+      `).join('');
+    }, () => { container.innerHTML = '<div class="loading-full">Please enable location access to find donors.</div>'; });
+  }
+
+  async function createRequest() {
+    const btn = document.getElementById('req-btn');
+    const blood = document.getElementById('r-blood').value;
+    if (!document.getElementById('r-patient').value || !blood) { showToast('Fill in patient name and blood group', 'warning'); return; }
+    btn.innerHTML = '<span class="spinner"></span> Submitting...';
+    btn.disabled = true;
+    const res = await api.post('/requests', {
+      patientName: document.getElementById('r-patient').value,
+      bloodGroup: blood,
+      unitsNeeded: parseInt(document.getElementById('r-units').value) || 1,
+      urgency: document.getElementById('r-urgency').value,
+      address: document.getElementById('r-address').value,
+      lat: parseFloat(document.getElementById('r-lat').value) || 18.5204,
+      lng: parseFloat(document.getElementById('r-lng').value) || 73.8567,
+      contactPhone: document.getElementById('r-phone').value,
+      notes: document.getElementById('r-notes').value
+    });
+    btn.innerHTML = '🩸 Submit Request'; btn.disabled = false;
+    if (res.success) {
+      document.getElementById('req-success').innerHTML = `✅ Request submitted! <strong>${res.notifiedDonors || 0} nearby donors</strong> have been notified.`;
+      document.getElementById('req-success').style.display = 'flex';
+      showToast(`Request sent! ${res.notifiedDonors || 0} donors notified.`, 'success');
+    } else {
+      document.getElementById('req-error').textContent = res.message;
+      document.getElementById('req-error').style.display = 'flex';
+    }
+  }
+
+  function getMyLocation() {
+    navigator.geolocation.getCurrentPosition(pos => {
+      document.getElementById('r-lat').value = pos.coords.latitude.toFixed(6);
+      document.getElementById('r-lng').value = pos.coords.longitude.toFixed(6);
+      showToast('Location captured!', 'success');
+    }, () => { document.getElementById('r-lat').value = 18.5204; document.getElementById('r-lng').value = 73.8567; showToast('Using default location', 'info'); });
+  }
+
+  async function loadNotifications() {
+    const res = await api.get('/notifications');
+    updateNotifBadge(res.unreadCount || 0);
+    const list = document.getElementById('notif-list');
+    if (!res.notifications?.length) { list.innerHTML = '<p class="text-muted" style="text-align:center;padding:16px;">No notifications</p>'; return; }
+    list.innerHTML = res.notifications.map(n => `<div class="notif-item ${n.read?'':'unread'} ${n.urgent?'urgent':''}" onclick="markRead('${n._id}')"><div class="notif-title">${n.title}</div><div class="notif-msg">${n.message}</div><div class="notif-time">${timeAgo(n.createdAt)}</div></div>`).join('');
+  }
+
+  async function markRead(id) { await api.put(`/notifications/${id}/read`); loadNotifications(); }
+  async function markAllRead() { await api.put('/notifications/read-all'); loadNotifications(); }
+  function toggleNotifs() { document.getElementById('notif-panel').classList.toggle('show'); }
+  function showSection(name) {
+    ['overview','find','my-requests','new-request','profile'].forEach(s => { const el = document.getElementById('section-'+s); if(el) el.style.display = s===name?'block':'none'; });
+    const titles = {overview:'Dashboard',find:'Find Donors','my-requests':'My Requests','new-request':'New Request',profile:'My Profile'};
+    document.getElementById('page-title').textContent = titles[name] || '';
+    if(name==='find') findDonors();
+    if(name==='my-requests') loadMyRequests();
+  }
+  function logout() { clearAuth(); window.location.href = '/login.html'; }
+  document.addEventListener('click', (e) => { if(!e.target.closest('#notif-panel')&&!e.target.closest('#notif-btn')) document.getElementById('notif-panel').classList.remove('show'); });
+
+  init();
+</script>
+</body>
+</html>
