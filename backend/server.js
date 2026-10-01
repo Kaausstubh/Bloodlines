@@ -65,5 +65,5 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`\n🩸 Smart Blood Network Server running on http://localhost:${PORT}`);
   console.log(`📡 WebSocket server active`);
-  console.log(`🗄️  Database: ${process.env.MONGO_URI}\n`);
+  console.log(`🗄️  Database connected\n`);
 });
